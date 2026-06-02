@@ -3,265 +3,10 @@
 <head>  
 <meta charset="UTF-8">  
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">  
-<title>Watch Together</title>
-
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL = "https://ylykbujhrlbmeryikrsf.supabase.co";
-const SUPABASE_KEY = "sb_publishable_u7WU3iNzCLO_CpDe187ggA_WJmBAfqk";
-window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-/* Firebase-like ID */
-function generateFirebaseId(){
-  return '-' + Math.random().toString(36).substr(2,9) + Date.now().toString(36);
-}
-
-/* Snapshot */
-function makeSnapshot(val,key){
-  return {
-    key:key||null,
-    val:()=>val,
-    forEach:(cb)=>{
-      if(typeof val==="object" && val){
-        Object.keys(val).forEach(k=>cb(makeSnapshot(val[k],k)));
-      }
-    }
-  };
-}
-
-function ref(path){
-  const parts = path.split("/");
-
-  return {
-
-    /* PUSH */
-    async push(data){
-      if(parts[0]==="chat"){
-        const firebase_id = generateFirebaseId();
-        await window.supabaseClient.from("chat").insert({
-          firebase_id,
-          text:data.text,
-          user_name:data.user,
-          time:data.time,
-          reply:data.reply||null,
-          seen:data.seen||false,
-          edited:data.edited||false,
-          reactions:data.reactions||{}
-        });
-      }
-
-      if(path==="video/emotes"){
-        await window.supabaseClient.from("video_emotes").insert({
-          emoji:data.e,
-          user:data.user,
-          ts:data.ts
-        });
-      }
-    },
-
-    /* SET */
-    async set(data){
-
-      /* Clear chat */
-      if(path==="chat" && data===null){
-        await window.supabaseClient.from("chat").delete().neq("id",0);
-        return;
-      }
-
-      /* Update message field */
-      if(parts[0]==="chat" && parts.length===3){
-        const firebase_id=parts[1];
-        const field=parts[2];
-        await window.supabaseClient.from("chat")
-          .update({[field]:data})
-          .eq("firebase_id",firebase_id);
-        return;
-      }
-
-      /* Nested reactions */
-      if(parts[0]==="chat" && parts.length===4 && parts[2]==="reactions"){
-        const firebase_id=parts[1];
-        const userKey=parts[3];
-        const {data:msg}=await window.supabaseClient.from("chat")
-          .select("reactions")
-          .eq("firebase_id",firebase_id)
-          .single();
-
-        let reactions=msg?.reactions||{};
-        reactions[userKey]=data;
-
-        await window.supabaseClient.from("chat")
-          .update({reactions})
-          .eq("firebase_id",firebase_id);
-        return;
-      }
-
-      /* Typing */
-      if(parts[0]==="typing"){
-        const id=parts[1];
-        if(data===null){
-          await window.supabaseClient.from("typing").delete().eq("id",id);
-        }else{
-          await window.supabaseClient.from("typing").upsert({
-            id,
-            user_name:data.user,
-            is_typing:data.typing,
-            created_at:new Date().toISOString()
-          });
-        }
-        return;
-      }
-
-      /* Video state */
-      if(path==="video/state"){
-        await window.supabaseClient.from("video_state").upsert({
-          id:1,
-          action:data.action,
-          time:data.time,
-          rate:data.rate,
-          updated_at:new Date().toISOString()
-        });
-        return;
-      }
-
-      /* Video URL */
-      if(path==="video/url"){
-        await window.supabaseClient.from("video_url").upsert({
-          id:1,
-          url:data
-        });
-        return;
-      }
-
-      /* Theme */
-      if(path==="ui/theme"){
-        localStorage.setItem("wt_theme",data);
-        return;
-      }
-    },
-
-    /* REMOVE */
-    async remove(){
-      if(parts[0]==="chat" && parts.length===2){
-        await window.supabaseClient.from("chat")
-          .delete()
-          .eq("firebase_id",parts[1]);
-      }
-    },
-
-    /* ON */
-    on(event,callback){
-
-      /* Chat added */
-      if(parts[0]==="chat" && event==="child_added"){
-        window.supabaseClient.channel("chat_insert")
-        .on("postgres_changes",{event:"INSERT",schema:"public",table:"chat"},
-          payload=>{
-            const d=payload.new;
-            callback(makeSnapshot({
-              text:d.text,
-              user:d.user_name,
-              time:d.time,
-              reply:d.reply,
-              seen:d.seen,
-              edited:d.edited,
-              reactions:d.reactions
-            },d.firebase_id));
-          }).subscribe();
-      }
-
-      /* Chat changed */
-      if(parts[0]==="chat" && event==="child_changed"){
-        window.supabaseClient.channel("chat_update")
-        .on("postgres_changes",{event:"UPDATE",schema:"public",table:"chat"},
-          payload=>{
-            const d=payload.new;
-            callback(makeSnapshot({
-              text:d.text,
-              user:d.user_name,
-              time:d.time,
-              reply:d.reply,
-              seen:d.seen,
-              edited:d.edited,
-              reactions:d.reactions
-            },d.firebase_id));
-          }).subscribe();
-      }
-
-      /* Chat removed */
-      if(parts[0]==="chat" && event==="child_removed"){
-        window.supabaseClient.channel("chat_delete")
-        .on("postgres_changes",{event:"DELETE",schema:"public",table:"chat"},
-          payload=>callback(makeSnapshot(null,payload.old.firebase_id)))
-        .subscribe();
-      }
-
-      /* Typing */
-      if(parts[0]==="typing" && event==="value"){
-        window.supabaseClient.channel("typing_channel")
-        .on("postgres_changes",{event:"*",schema:"public",table:"typing"},
-          async ()=>{
-            const {data}=await window.supabaseClient.from("typing").select("*");
-            const map={};
-            (data||[]).forEach(d=>map[d.id]={user:d.user_name,typing:d.is_typing});
-            callback(makeSnapshot(map));
-          }).subscribe();
-      }
-
-      /* Video state */
-      if(path==="video/state"){
-        window.supabaseClient.channel("video_sync")
-        .on("postgres_changes",{event:"*",schema:"public",table:"video_state"},
-          payload=>callback(makeSnapshot(payload.new)))
-        .subscribe();
-      }
-
-      /* Video URL */
-      if(path==="video/url"){
-        window.supabaseClient.channel("video_url_sync")
-        .on("postgres_changes",{event:"*",schema:"public",table:"video_url"},
-          payload=>callback(makeSnapshot(payload.new.url)))
-        .subscribe();
-      }
-
-      /* Online count */
-      if(parts[0]==="online" && event==="value"){
-        const channel=window.supabaseClient.channel("presence",{config:{presence:{key:Math.random().toString(36)}}});
-        channel.subscribe(async(status)=>{
-          if(status==="SUBSCRIBED"){
-            await channel.track({online:true});
-          }
-        });
-        channel.on("presence",{event:"sync"},()=>{
-          const state=channel.presenceState();
-          callback(makeSnapshot(state));
-        });
-      }
-
-      if(path===".info/connected"){
-        callback(makeSnapshot(true));
-      }
-
-      /* Theme */
-      if(path==="ui/theme"){
-        const val=localStorage.getItem("wt_theme");
-        callback(makeSnapshot(val));
-      }
-    },
-
-    onDisconnect(){
-      return { remove:()=>{} };
-    },
-
-    limitToLast(){ return this; } /* prevent crash */
-  };
-}
-
-var db={ref};
-</script>
-
+<title>Watch Together</title>  
   
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>  
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>  
   
 <style>  
 *{box-sizing:border-box;margin:0;padding:0}  
@@ -968,6 +713,50 @@ color:white;
     margin-top:-10px;         /* ✅ keep aligned (remove if you don't want chat up) */
   }
 }  
+
+/* ===== TV FRAME UPGRADE ===== */
+.video-container{
+border-radius:28px;
+padding:18px 18px 60px 18px;
+background:linear-gradient(180deg,#1a1a1a,#000);
+position:relative;
+}
+
+.video-container::before{
+content:"";
+position:absolute;
+inset:0;
+border-radius:28px;
+background:linear-gradient(145deg,#111,#000);
+box-shadow:
+  inset 0 0 25px rgba(0,0,0,.8),
+  0 18px 40px rgba(0,0,0,.5);
+pointer-events:none;
+z-index:3;
+}
+
+/* Ambient Light */
+.video-container::after{
+content:"";
+position:absolute;
+inset:-40px;
+border-radius:40px;
+background:radial-gradient(circle at center,
+rgba(0,136,255,.45),
+rgba(131,56,236,.35),
+rgba(255,0,110,.25),
+transparent 70%);
+filter:blur(60px);
+opacity:.6;
+z-index:1;
+pointer-events:none;
+transition:opacity .4s ease;
+}
+
+body.dark .video-container::after{
+opacity:0;
+}
+
 </style>  
 </head>
 <body>
@@ -1045,6 +834,20 @@ color:white;
 
     <!-- ✅ tiny button like chat reaction (now it sits in bottom space, not on video) -->
     <span id="videoReactBtn" class="react-btn" style="position:absolute;right:14px;bottom:14px;z-index:12;">😊</span>
+<span id="videoSizeBtn" class="react-btn"
+style="position:absolute;right:60px;bottom:14px;z-index:12;">📺</span>
+
+<div id="videoSizePanel" class="glass"
+style="display:none;position:absolute;right:60px;bottom:60px;z-index:12;padding:10px;border-radius:14px;min-width:130px;">
+  <div style="display:flex;flex-direction:column;gap:6px;font-size:14px;">
+    <span style="cursor:pointer" onclick="setVideoSize('contain')">Fit Screen</span>
+    <span style="cursor:pointer" onclick="setVideoSize('cover')">Fill Screen</span>
+    <span style="cursor:pointer" onclick="setVideoSize('100')">100%</span>
+    <span style="cursor:pointer" onclick="setVideoSize('stretch')">Stretch</span>
+    <span class="picker-close" onclick="closeSizePanel()">✕</span>
+  </div>
+</div>
+
 
     <!-- ✅ panel for video reactions -->
     <div id="videoReactPanel" class="glass" style="display:none;position:absolute;right:14px;bottom:60px;z-index:12;padding:8px;border-radius:14px;">
@@ -1118,6 +921,21 @@ b.style.color=colors[Math.floor(Math.random()*colors.length)];
 </script>
 
 <script>  
+// ===================== NEW FIREBASE CONFIGURATION =====================
+var firebaseConfig = {
+    apiKey: "AIzaSyARAsQaZhfHHPFVBOpKmPx7u90VRrJoUuM",
+    authDomain: "hobby-land-b0e00.firebaseapp.com",
+    databaseURL: "https://hobby-land-b0e00-default-rtdb.firebaseio.com",
+    projectId: "hobby-land-b0e00",
+    storageBucket: "hobby-land-b0e00.firebasestorage.app",
+    messagingSenderId: "1001642178322",
+    appId: "1:1001642178322:web:a2ca537d1520b9b43d65cb"
+};
+// ======================================================================
+
+firebase.initializeApp(firebaseConfig);  
+var db=firebase.database();  
+
 var username="user"+Math.floor(Math.random()*1000);  
 var myId=Math.random().toString(36).substr(2,9);  
 var replyTo=null;  
@@ -1223,49 +1041,16 @@ db.ref("video/emotes").limitToLast(30).on("child_added",snap=>{
 /* 🎬 VIDEO LINK             */
 /*****************************/
 function setVideoLink(){  
-  var link = document.getElementById("videoLinkInput").value;  
-  if(!link) return;  
-
+  var link=document.getElementById("videoLinkInput").value;  
+  if(!link)return;  
   db.ref("video/url").set(link);  
-
-  // 300ms صبر کن بعد state بفرست
-  setTimeout(() => {
-    pushState({
-      action: "play",
-      time: 0,
-      rate: 1,
-      ts: Date.now()
-    });
-  }, 300);
-
-  videoLinkInput.value = "";  
+  videoLinkInput.value="";  
   toggleSettings();  
-}
-/* LOAD EXISTING URL ON START */
-(async function(){
-  const { data } = await window.supabaseClient
-    .from("video_url")
-    .select("*")
-    .eq("id",1)
-    .single();
+}  
+db.ref("video/url").on("value",snap=>{  
+  if(snap.val())video.src=snap.val();  
+});  
 
-  if(data && data.url){
-    vid.src = data.url;
-    vid.load();
-  }
-})();
-  db.ref("video/url").on("value", snap => {  
-  var url = snap.val();
-  if(!url) return;
-
-  vid.src = url;
-  vid.load();
-
-  vid.onloadedmetadata = function(){
-    var p = vid.play();
-    if(p && p.catch) p.catch(()=>{});
-  };
-});
 /*****************************/
 /* 🎭 CURTAIN HELPERS        */
 /*****************************/
@@ -1339,55 +1124,28 @@ vid.addEventListener("ratechange",()=>{
   pushState({action:"rate",time:vid.currentTime,rate:vid.playbackRate,ts:Date.now()});  
 });  
 
-db.ref("video/state").on("value", snap => {
-  var s = snap.val();
-  if (!s) return;
+db.ref("video/state").on("value",snap=>{  
+  var s=snap.val();  
+  if(!s)return;  
+  isSyncing=true;  
 
-  isSyncing = true;
+  if(typeof s.rate==="number" && vid.playbackRate!==s.rate){  
+    vid.playbackRate=s.rate;  
+  }  
 
-  const now = Date.now();
-  const delay = s.ts ? (now - s.ts) / 1000 : 0;
+  if(typeof s.time==="number" && Math.abs(vid.currentTime-s.time)>0.6){  
+    try{vid.currentTime=s.time;}catch(e){}  
+  }  
 
-  // تنظیم سرعت
-  if (typeof s.rate === "number" && vid.playbackRate !== s.rate) {
-    vid.playbackRate = s.rate;
-  }
+  if(s.action==="seek"){ curtainOpenAndGo(); }  
 
-  // اگر در حالت پلی هست
-  if (s.action === "play") {
+  if(s.action==="play"){  
+    var p=vid.play();  
+    if(p && p.catch)p.catch(()=>{});  
+  }  
+  if(s.action==="pause"){ vid.pause(); }  
 
-    let targetTime = s.time;
-
-    // اگر ts داریم یعنی کسی دیر وارد شده
-    if (s.ts && delay > 0) {
-      targetTime = s.time + (delay * (s.rate || 1));
-    }
-
-    if (Math.abs(vid.currentTime - targetTime) > 0.7) {
-      try { vid.currentTime = targetTime; } catch (e) {}
-    }
-
-    var p = vid.play();
-    if (p && p.catch) p.catch(() => {});
-  }
-
-  // اگر pause
-  if (s.action === "pause") {
-    vid.pause();
-    if (typeof s.time === "number") {
-      try { vid.currentTime = s.time; } catch (e) {}
-    }
-  }
-
-  // اگر seek
-  if (s.action === "seek") {
-    curtainOpenAndGo();
-    if (typeof s.time === "number") {
-      try { vid.currentTime = s.time; } catch (e) {}
-    }
-  }
-
-  setTimeout(() => { isSyncing = false; }, 300);
+  setTimeout(()=>{isSyncing=false;},300);  
 });  
 /* ===== END SYNC ===== */  
 
@@ -1748,21 +1506,8 @@ function clearChat(){
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    const typingEl = document.querySelector(".typing-indicator");
-    const inputEl = document.querySelector("input, textarea");
-
+    const typingEl = document.getElementById("typingIndicator");
     if (typingEl) typingEl.style.display = "none";
-
-    if (inputEl && typingEl) {
-        let typingTimeout;
-        inputEl.addEventListener("input", () => {
-            typingEl.style.display = "block";
-            clearTimeout(typingTimeout);
-            typingTimeout = setTimeout(() => {
-                typingEl.style.display = "none";
-            }, 1200);
-        });
-    }
 });
 </script>
 
@@ -1789,5 +1534,49 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
+<script>
+/* ===== VIDEO SIZE CONTROL ===== */
+var __sizeBtn = document.getElementById("videoSizeBtn");
+var __sizePanel = document.getElementById("videoSizePanel");
+
+function closeSizePanel(){
+  if(__sizePanel) __sizePanel.style.display="none";
+}
+
+if(__sizeBtn){
+__sizeBtn.addEventListener("click",function(e){
+e.stopPropagation();
+__sizePanel.style.display =
+(__sizePanel.style.display==="none" || !__sizePanel.style.display)
+? "block" : "none";
+});
+}
+
+function setVideoSize(mode){
+var v=document.getElementById("video");
+if(!v)return;
+
+if(mode==="contain"){
+v.style.objectFit="contain";
+}
+else if(mode==="cover"){
+v.style.objectFit="cover";
+}
+else if(mode==="100"){
+v.style.objectFit="contain";
+v.style.width="100%";
+v.style.height="100%";
+}
+else if(mode==="stretch"){
+v.style.objectFit="fill";
+}
+
+closeSizePanel();
+}
+
+document.addEventListener("click",function(){
+closeSizePanel();
+});
+</script>
 </body>  
 </html>
