@@ -771,55 +771,66 @@ border-left:1px solid rgba(255,255,255,0.05);
 }  
 #settings.open{right:0}  
 
-/* ✅ دکمه‌های منو با عکس‌های بزرگ و درشت */
+/* ✅ دکمه‌های منو - فقط عکس بزرگ می‌شود، قالب ثابت */
 #settings button {
   width: 100%;
   margin-bottom: 14px;
-  padding: 22px 20px;
+  padding: 0;
   border: none;
   border-radius: 20px;
   color: #fff;
-  font-size: 22px;
-  font-weight: 800;
+  font-size: 24px;
+  font-weight: 900;
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: center;
   letter-spacing: 0.5px;
-  background-size: 100% 100%;
+  background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  min-height: 85px;
+  min-height: 90px;
+  height: 90px;
   display: flex;
   align-items: center;
   justify-content: center;
-  text-shadow: 0 3px 15px rgba(0,0,0,0.7);
+  text-shadow: 0 3px 15px rgba(0,0,0,0.8);
   box-shadow: 0 6px 25px rgba(0,0,0,0.4);
   position: relative;
   overflow: hidden;
+  background-color: #1a1a1a;
+  background-blend-mode: overlay;
 }
 
-/* ✅ همه دکمه‌ها با کادر قرمز */
+/* ✅ همه دکمه‌ها با کادر قرمز - عکس بزرگ */
 #settings button {
   background-image: url('https://raw.githubusercontent.com/persiancom/watch-togethe/main/file_0000000008c871f48d1b5c151dd2b330.png');
+  background-size: cover;
+  background-position: center;
 }
 
 /* ✅ دکمه بستن با کادر مشکی */
 #settings button:last-child {
   background-image: url('https://raw.githubusercontent.com/persiancom/watch-togethe/main/file_000000006b8c7246a99f62c96ca75449.png');
+  background-size: cover;
+  background-position: center;
 }
 
 /* ✅ دکمه دارک مود با کادر مشکی */
 #settings button[data-dark] {
   background-image: url('https://raw.githubusercontent.com/persiancom/watch-togethe/main/file_000000006b8c7246a99f62c96ca75449.png');
+  background-size: cover;
+  background-position: center;
 }
 
 /* ✅ دکمه حذف تاریخچه با کادر مشکی */
 #settings button[data-clear] {
   background-image: url('https://raw.githubusercontent.com/persiancom/watch-togethe/main/file_000000006b8c7246a99f62c96ca75449.png');
+  background-size: cover;
+  background-position: center;
 }
 
 #settings button:hover {
-  transform: scale(1.04);
+  transform: scale(1.03);
   box-shadow: 0 8px 35px rgba(0,0,0,0.6);
 }
 
@@ -827,12 +838,12 @@ border-left:1px solid rgba(255,255,255,0.05);
   transform: scale(0.96);
 }
 
-/* پوشش شیشه‌ای روی عکس‌ها برای خوانایی بهتر متن */
+/* پوشش شیشه‌ای روی عکس‌ها برای خوانایی بهتر متن - کمتر برای دیده شدن عکس */
 #settings button::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.15);
   border-radius: 20px;
   z-index: 0;
 }
@@ -840,6 +851,9 @@ border-left:1px solid rgba(255,255,255,0.05);
 #settings button span {
   position: relative;
   z-index: 1;
+  font-size: 24px;
+  font-weight: 900;
+  text-shadow: 0 0 30px rgba(0,0,0,0.9), 0 0 60px rgba(0,0,0,0.5);
 }
 
 #settings h3 {
@@ -866,10 +880,12 @@ border-left:1px solid rgba(255,255,255,0.05);
     padding: 16px;
   }
   #settings button {
-    padding: 18px 16px;
-    font-size: 19px;
-    min-height: 70px;
+    min-height: 75px;
+    height: 75px;
     border-radius: 16px;
+  }
+  #settings button span {
+    font-size: 20px;
   }
   #settings button::before {
     border-radius: 16px;
@@ -1023,7 +1039,8 @@ body::before {
 /* بارگذاری سریع عکس‌های دکمه‌های منو */
 #settings button {
   will-change: transform, box-shadow;
-  background-size: 100% 100%;
+  background-size: cover;
+  background-position: center;
   image-rendering: auto;
 }
 
