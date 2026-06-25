@@ -154,7 +154,7 @@ border-radius:18px;
 }  
   
 header{  
-height:90px;  /* افزایش ارتفاع برای جا شدن لوگوی بزرگتر */
+height:130px;  /* افزایش ارتفاع برای لوگوی غول‌پیکر */
 flex-shrink:0;  
 display:flex;  
 justify-content:space-between;  
@@ -162,30 +162,51 @@ align-items:center;
 padding:0 16px;  
 }  
 
-/* ✅ لوگوی جدید بسیار بزرگ و درشت */
+/* ✅ لوگوی غول‌پیکر و بسیار درشت */
 .logo-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1; /* باعث می‌شود لوگو در وسط قرار گیرد */
+  flex: 1;
   margin: 0 10px;
 }
 
 .logo-wrapper img {
-  height: 1000px;  /* اندازه بسیار بزرگ */
+  height: 180px;  /* اندازه غول‌پیکر */
   width: auto;
-  max-height: 120px;
-  filter: drop-shadow(0 0 25px rgba(255, 215, 0, 0.8)) drop-shadow(0 0 60px rgba(255, 215, 0, 0.4));
+  max-height: 200px;
+  filter: drop-shadow(0 0 40px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 80px rgba(255, 215, 0, 0.5)) drop-shadow(0 0 120px rgba(255, 215, 0, 0.3));
   transition: filter 0.3s ease;
   display: block;
   image-rendering: auto;
+  animation: logoGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes logoGlow {
+  0% {
+    filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.7)) drop-shadow(0 0 60px rgba(255, 215, 0, 0.4));
+  }
+  100% {
+    filter: drop-shadow(0 0 60px rgba(255, 215, 0, 1)) drop-shadow(0 0 100px rgba(255, 215, 0, 0.6)) drop-shadow(0 0 150px rgba(255, 215, 0, 0.3));
+  }
 }
 
 /* در حالت موبایل لوگو همچنان بزرگ */
 @media (max-width: 480px) {
+  header {
+    height: 110px;
+  }
   .logo-wrapper img {
-    height: 75px;
-    max-height: 90px;
+    height: 130px;
+    max-height: 150px;
+  }
+}
+
+/* در حالت افقی لوگو بزرگتر */
+@media (orientation: landscape) and (max-height: 500px) {
+  .logo-wrapper img {
+    height: 100px;
+    max-height: 120px;
   }
 }
 
