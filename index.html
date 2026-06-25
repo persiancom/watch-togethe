@@ -154,7 +154,7 @@ border-radius:18px;
 }  
   
 header{  
-height:70px;  /* افزایش ارتفاع برای جا شدن لوگو */
+height:90px;  /* افزایش ارتفاع برای جا شدن لوگوی بزرگتر */
 flex-shrink:0;  
 display:flex;  
 justify-content:space-between;  
@@ -162,7 +162,7 @@ align-items:center;
 padding:0 16px;  
 }  
 
-/* ✅ لوگوی جدید */
+/* ✅ لوگوی جدید بسیار بزرگ و درشت */
 .logo-wrapper {
   display: flex;
   align-items: center;
@@ -172,17 +172,20 @@ padding:0 16px;
 }
 
 .logo-wrapper img {
-  height: 55px;  /* اندازه بزرگ و درشت */
+  height: 100px;  /* اندازه بسیار بزرگ */
   width: auto;
-  filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.6)) drop-shadow(0 0 30px rgba(255, 215, 0, 0.3));
+  max-height: 120px;
+  filter: drop-shadow(0 0 25px rgba(255, 215, 0, 0.8)) drop-shadow(0 0 60px rgba(255, 215, 0, 0.4));
   transition: filter 0.3s ease;
   display: block;
+  image-rendering: auto;
 }
 
-/* در حالت موبایل لوگو کمی کوچک‌تر اما همچنان بزرگ */
+/* در حالت موبایل لوگو همچنان بزرگ */
 @media (max-width: 480px) {
   .logo-wrapper img {
-    height: 42px;
+    height: 75px;
+    max-height: 90px;
   }
 }
 
@@ -733,6 +736,17 @@ body.dark .video-container::after{
 opacity:0;
 }
 
+/* ===== سرعت بارگذاری لوگو و پس‌زمینه ===== */
+img {
+  will-change: transform, filter;
+  content-visibility: auto;
+}
+
+body::before {
+  will-change: transform;
+  content-visibility: auto;
+}
+
 </style>  
 </head>
 <body>
@@ -753,7 +767,7 @@ opacity:0;
 
 <header>  
   <div class="logo-wrapper">
-    <img src="https://raw.githubusercontent.com/persiancom/watch-togethe/main/file_00000000e46071f49a450ee688ef7b27.png" alt="Logo">
+    <img src="https://raw.githubusercontent.com/persiancom/watch-togethe/main/file_00000000e46071f49a450ee688ef7b27.png" alt="Logo" loading="eager" decoding="async" fetchpriority="high">
   </div>
   <div style="display:flex;align-items:center;gap:8px;white-space:nowrap;">  
     <span id="onlineWrapper" style="display:flex;align-items:center;gap:6px;">  
