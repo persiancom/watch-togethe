@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">  
 <title>Watch Together</title>  
   
-<script src="https://www.gstatic.comfirebasejs/8.10.0/firebase-app.js"></script>  
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>  
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>  
   
 <style>  
@@ -802,7 +802,7 @@ border-left:1px solid rgba(255,215,0,0.15);
   }
 }
 
-/* ✅ LOGIN NEW - دو ورودی */
+/* ✅ LOGIN - دو ورودی با دیباگ */
 #login{  
 position:fixed;  
 inset:0;  
@@ -821,7 +821,7 @@ border-radius:20px;
 border:1px solid rgba(229,9,20,.35);  
 background:linear-gradient(180deg, rgba(20,0,0,.82), rgba(0,0,0,.78));  
 box-shadow:0 10px 30px rgba(0,0,0,.55), 0 0 18px rgba(229,9,20,.25);  
-width:320px;
+width:340px;
 }  
 .login-box h3{margin-bottom:16px; letter-spacing:.2px; color:#fff; font-size:22px}
 .login-box input{  
@@ -858,6 +858,13 @@ color:#ff4444;
 font-size:14px;
 margin-top:8px;
 display:none;
+}
+#loginDebug{
+color:#888;
+font-size:12px;
+margin-top:6px;
+display:none;
+word-break:break-all;
 }
 
 #welcomeOverlay{  
@@ -956,10 +963,11 @@ body::before {
   <div id="login">  
   <div class="login-box">  
     <h3>🔐 ورود به حساب</h3>  
-    <input id="loginUser" placeholder="نام کاربری...">  
-    <input id="loginPass" type="password" placeholder="رمز عبور...">  
+    <input id="loginUser" placeholder="نام کاربری..." oninput="document.getElementById('loginError').style.display='none';document.getElementById('loginDebug').style.display='none'">  
+    <input id="loginPass" type="password" placeholder="رمز عبور..." oninput="document.getElementById('loginError').style.display='none';document.getElementById('loginDebug').style.display='none'">  
     <button onclick="checkLogin()">ورود</button>  
-    <div id="loginError">رمز یا نام کاربری اشتباه است</div>
+    <div id="loginError">❌ رمز یا نام کاربری اشتباه است</div>
+    <div id="loginDebug"></div>
   </div>  
 </div>  
 
@@ -1110,14 +1118,24 @@ const validUsers = {
 };
 
 /*****************************/
-/* ✅ LOGIN SYSTEM           */
+/* ✅ LOGIN SYSTEM با دیباگ  */
 /*****************************/
 function checkLogin(){
   var user = document.getElementById("loginUser").value.trim();
   var pass = document.getElementById("loginPass").value.trim();
   var errorEl = document.getElementById("loginError");
+  var debugEl = document.getElementById("loginDebug");
   
-  if(validUsers[user] && validUsers[user] === pass){
+  // نمایش ورودی برای دیباگ
+  debugEl.style.display = "block";
+  debugEl.innerHTML = "🔍 ورودی: نام کاربری = '" + user + "' | رمز = '" + pass + "'";
+  debugEl.style.color = "#ffd700";
+  
+  // بررسی کاربران
+  var userExists = validUsers[user];
+  var passCorrect = userExists && userExists === pass;
+  
+  if(userExists && passCorrect){
     username = user;
     errorEl.style.display = "none";
     document.getElementById("login").style.display = "none";
@@ -1125,6 +1143,12 @@ function checkLogin(){
     document.getElementById("welcomeOverlay").style.display = "flex";
   } else {
     errorEl.style.display = "block";
+    if(!userExists){
+      debugEl.innerHTML += " ❌ کاربر پیدا نشد";
+    } else if(!passCorrect){
+      debugEl.innerHTML += " ❌ رمز اشتباه است";
+    }
+    debugEl.style.color = "#ff6666";
   }
 }
 
