@@ -218,7 +218,7 @@ position:relative;
   }
 }
 
-/* ✅ قسمت تنظیمات و آنلاین - پایین‌تر از قبل */
+/* ✅ قسمت تنظیمات و آنلاین - فاصله بسیار ریز از هدر */
 .header-right {
   display: flex;
   align-items: center;
@@ -226,14 +226,14 @@ position:relative;
   white-space: nowrap;
   position: relative;
   z-index: 5;
-  margin-top: 0px;  /* پایین‌تر آمدن */
+  margin-top: -2px;  /* فاصله بسیار ریز از هدر */
   margin-right: 5px;
 }
 
 /* برای موبایل */
 @media (max-width: 480px) {
   .header-right {
-    margin-top: 15px;
+    margin-top: -2px;
     margin-right: 3px;
   }
 }
@@ -241,7 +241,7 @@ position:relative;
 /* برای حالت افقی */
 @media (orientation: landscape) and (max-height: 600px) {
   .header-right {
-    margin-top: 10px;
+    margin-top: -2px;
     margin-right: 3px;
   }
 }
