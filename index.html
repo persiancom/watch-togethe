@@ -622,13 +622,13 @@ cursor:pointer;
 /* ============================================================ */
 .input-area {
   display: flex;
-  gap: 10px;
-  margin-top: 8px;
+  gap: 8px;
+  margin-top: 6px;
   flex-shrink: 0;
   align-items: center;
   background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(20px);
-  padding: 6px 8px 6px 16px;
+  padding: 4px 6px 4px 14px;
   border-radius: 50px;
   border: 2px solid transparent;
   background-image: 
@@ -642,6 +642,7 @@ cursor:pointer;
     0 8px 32px rgba(0, 0, 0, 0.4);
   transition: all 0.4s ease;
   animation: goldBorderPulse 3s ease-in-out infinite;
+  min-height: 50px;
 }
 
 @keyframes goldBorderPulse {
@@ -670,16 +671,17 @@ cursor:pointer;
 
 .input-area input {
   flex: 1;
-  padding: 12px 16px;
+  padding: 8px 12px;
   border-radius: 50px;
   border: none;
-  font-size: 15px;
+  font-size: 14px;
   background: transparent;
   color: #fff;
   outline: none;
   font-weight: 400;
   letter-spacing: 0.3px;
   transition: all 0.3s ease;
+  height: 36px;
 }
 
 .input-area input::placeholder {
@@ -698,7 +700,7 @@ cursor:pointer;
   color: #fff;
 }
 
-/* ✨ دکمه ارسال با عکس جدید - بسیار بزرگ */
+/* ✨ دکمه ارسال با عکس - بزرگ */
 .input-area button {
   padding: 0;
   border: none;
@@ -706,8 +708,8 @@ cursor:pointer;
   background: transparent;
   cursor: pointer;
   transition: all 0.3s ease;
-  width: 70px;
-  height: 70px;
+  width: 55px;
+  height: 55px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
