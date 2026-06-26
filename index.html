@@ -137,12 +137,12 @@ border:1px solid rgba(255,255,255,.1);
 border-radius:18px;  
 }  
 
-/* ===== HEADER با لوگوی بزرگ وسط ===== */
+/* ===== HEADER با لوگوی بزرگ وسط و دکمه تنظیمات ===== */
 header{  
 height:100px;  
 flex-shrink:0;  
 display:flex;  
-justify-content:center;  
+justify-content:space-between;  
 align-items:center;  
 padding:0 16px;  
 position:relative;  
@@ -152,20 +152,21 @@ position:relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
+  flex: 1;
+  margin: 0 5px;
   position: relative;
 }
 
 .logo-wrapper img {
-  height: 320px;
+  height: 350px;
   width: auto;
-  max-height: 350px;
+  max-height: 380px;
   filter: drop-shadow(0 0 60px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 120px rgba(255, 215, 0, 0.5)) drop-shadow(0 0 180px rgba(255, 215, 0, 0.3));
   transition: filter 0.3s ease;
   display: block;
   image-rendering: auto;
   animation: logoGlow 3s ease-in-out infinite alternate;
-  margin-top: 30px;
+  margin-top: 20px;
 }
 
 @keyframes logoGlow {
@@ -175,16 +176,38 @@ position:relative;
 
 @media (max-width: 480px) {
   header { height: 80px; }
-  .logo-wrapper img { height: 200px; max-height: 230px; margin-top: 20px; }
+  .logo-wrapper img { height: 220px; max-height: 250px; margin-top: 15px; }
 }
 @media (orientation: landscape) and (max-height: 600px) {
   header { height: 70px; }
-  .logo-wrapper img { height: 150px; max-height: 170px; margin-top: 15px; }
+  .logo-wrapper img { height: 160px; max-height: 180px; margin-top: 10px; }
 }
 
-/* ===== حذف گزینه تعداد آنلاین از هدر ===== */
+/* ===== دکمه تنظیمات در هدر ===== */
 .header-right {
-  display: none; /* پنهان کردن کامل */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  position: relative;
+  z-index: 5;
+  margin-right: 5px;
+}
+
+.header-right button {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.header-right button:hover {
+  background: rgba(255,255,255,0.15);
+  transform: scale(1.05);
 }
 
 .main{  
@@ -332,7 +355,7 @@ min-height:0;
 position:relative;
 }  
 
-/* ✅ هدر چت با اسم کاربران آنلاین و پینگ */
+/* ✅ هدر چت با اسم کاربران آنلاین (بدون دکمه پینگ) */
 .chat-header {
   display: flex;
   justify-content: space-between;
@@ -353,6 +376,7 @@ position:relative;
   flex-wrap: wrap;
   font-size: 11px;
   align-items: center;
+  width: 100%;
 }
 
 .online-user {
@@ -381,37 +405,10 @@ position:relative;
   text-align: center;
 }
 
-/* ✅ رنگ‌بندی جدید پینگ */
-.ping-good { color: #00ff88; }      /* زیر ۳۰۰ - سبز */
-.ping-medium { color: #ff8c00; }    /* ۳۰۰ تا ۶۰۰ - نارنجی */
-.ping-bad { color: #ff2222; }       /* بالای ۶۰۰ - قرمز */
+.ping-good { color: #00ff88; }
+.ping-medium { color: #ff8c00; }
+.ping-bad { color: #ff2222; }
 .ping-offline { color: #ff4444; }
-
-.chat-header .ping-toggle {
-  font-size: 11px;
-  opacity: 0.6;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: rgba(255,255,255,0.05);
-  padding: 2px 8px;
-  border-radius: 10px;
-  transition: all 0.3s ease;
-  border: none;
-  color: white;
-}
-
-.chat-header .ping-toggle:hover {
-  opacity: 1;
-  background: rgba(255,255,255,0.1);
-}
-
-.chat-header .ping-toggle.active {
-  opacity: 1;
-  background: rgba(255,215,0,0.15);
-  color: #ffd700;
-}
 
 .chat-box{  
 flex:1;  
@@ -1034,9 +1031,13 @@ body::before {
 </div>  
 
 <header>  
+  <div style="width:48px;"></div>
   <div class="logo-wrapper">
     <img src="https://raw.githubusercontent.com/persiancom/Cinema_Online/main/file_00000000e46071f49a450ee688ef7b27.png" alt="Logo" loading="eager" decoding="async" fetchpriority="high">
   </div>
+  <div class="header-right">  
+    <button onclick="toggleSettings()">⚙️</button>  
+  </div>  
 </header>  
 
 <div id="settings" class="glass">  
@@ -1052,10 +1053,6 @@ body::before {
   <button onclick="setTheme('theme3')">تم ۳</button>
   <button onclick="setTheme('theme4')">تم ۴</button>
   
-  <hr>  
-  
-  <button onclick="togglePing()" id="pingToggleBtn">📶 نمایش پینگ: <span id="pingStatus">خاموش</span></button>
-
   <hr>  
 
   <button onclick="toggleDark()">دارک مود</button>  
@@ -1110,14 +1107,11 @@ style="display:none;position:absolute;right:60px;bottom:60px;z-index:12;padding:
   </div>  
 
   <div class="chat-container glass">  
-    <!-- ✅ هدر چت با اسم کاربران آنلاین و پینگ -->
+    <!-- ✅ هدر چت با اسم کاربران آنلاین (بدون دکمه پینگ) -->
     <div class="chat-header" id="chatHeader">
       <div class="online-users" id="onlineUsers">
         <span style="opacity:0.5;font-size:10px;">📡 آنلاین‌ها:</span>
       </div>
-      <button class="ping-toggle" id="pingToggleHeader" onclick="togglePing()">
-        📶 <span id="pingStatusHeader">خاموش</span>
-      </button>
     </div>
     
     <div class="chat-box" id="chat"></div>  
@@ -1178,8 +1172,8 @@ const validUsers = {
   "حمیدرضا": "CTF_22"
 };
 
-// ✅ وضعیت نمایش پینگ
-var showPing = false;
+// ✅ وضعیت نمایش پینگ - همیشه روشن
+var showPing = true;
 
 /*****************************/
 /* ✅ LOGIN SYSTEM با دیباگ  */
@@ -1257,44 +1251,8 @@ function toggleSettings(){settings.classList.toggle("open")}
 function toggleDark(){document.body.classList.toggle("dark")}  
 
 /*****************************/
-/* 📶 PING SYSTEM           */
+/* 📶 PING SYSTEM - همیشه روشن */
 /*****************************/
-function togglePing(){
-  showPing = !showPing;
-  var statusText = showPing ? "روشن" : "خاموش";
-  document.getElementById("pingStatus").innerText = statusText;
-  document.getElementById("pingStatusHeader").innerText = statusText;
-  
-  var btn = document.getElementById("pingToggleHeader");
-  if(showPing){
-    btn.classList.add("active");
-    setTimeout(() => {
-      updateMyPing();
-      updateUserPings();
-    }, 300);
-  } else {
-    btn.classList.remove("active");
-    document.querySelectorAll('.ping-badge').forEach(el => {
-      el.textContent = '--';
-      el.className = 'ping-badge';
-    });
-  }
-  
-  try{localStorage.setItem("showPing", showPing);}catch(e){}
-}
-
-// بازیابی وضعیت پینگ
-(function(){
-  try{
-    var saved = localStorage.getItem("showPing");
-    if(saved === "true"){
-      showPing = true;
-      document.getElementById("pingStatus").innerText = "روشن";
-      document.getElementById("pingStatusHeader").innerText = "روشن";
-      document.getElementById("pingToggleHeader").classList.add("active");
-    }
-  }catch(e){}
-})();
 
 // محاسبه پینگ واقعی
 function measurePing(){
@@ -1316,8 +1274,6 @@ function measurePing(){
 
 // به‌روزرسانی پینگ کاربران
 async function updateUserPings(){
-  if(!showPing) return;
-  
   const users = document.querySelectorAll('.online-user');
   for(const el of users){
     const userId = el.dataset.userId;
@@ -1342,7 +1298,6 @@ async function updateUserPings(){
 
 // پینگ خودمان
 async function updateMyPing(){
-  if(!showPing) return;
   const ping = await measurePing();
   const myEl = document.querySelector('.online-user[data-user-id="' + myId + '"] .ping-badge');
   if(myEl){
@@ -1361,10 +1316,8 @@ async function updateMyPing(){
 
 // شروع پینگ周期
 setInterval(() => {
-  if(showPing){
-    updateMyPing();
-    updateUserPings();
-  }
+  updateMyPing();
+  updateUserPings();
 }, 4000);
 
 /*****************************/
@@ -1544,7 +1497,7 @@ connectedRef.on("value", function(snap) {
   }
 });
 
-// ✅ نمایش لیست کاربران آنلاین
+// ✅ نمایش لیست کاربران آنلاین با پینگ
 db.ref("online").on("value", snap => {
   var count = 0;
   var usersHtml = '<span style="opacity:0.5;font-size:10px;">📡 آنلاین‌ها:</span>';
@@ -1560,19 +1513,18 @@ db.ref("online").on("value", snap => {
       usersHtml += `<span class="online-user" data-user-id="${userId}">
         <span class="dot"></span>
         ${userName}${isMe ? ' (شما)' : ''}
-        <span class="ping-badge">${showPing ? '--' : '--'}</span>
+        <span class="ping-badge">--</span>
       </span>`;
     }
   });
   
   document.getElementById("onlineUsers").innerHTML = usersHtml;
   
-  if(showPing){
-    setTimeout(() => {
-      updateMyPing();
-      updateUserPings();
-    }, 500);
-  }
+  // به‌روزرسانی پینگ
+  setTimeout(() => {
+    updateMyPing();
+    updateUserPings();
+  }, 500);
 });
 
 // اگر کاربر لاگین کرده بود ولی بعد از رفرش آنلاین نشده بود
