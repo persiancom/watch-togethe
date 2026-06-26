@@ -723,14 +723,16 @@ body.dark .input-area input { color: #f0f0f0; }
 .video-controls .ctrl-btn {
   font-size: 11px;
   opacity: 0.9;
-  padding: 2px 5px;
+  padding: 4px 10px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.5);
   cursor: pointer;
   user-select: none;
   backdrop-filter: blur(4px);
   transition: all 0.3s ease;
+  color: white;
+  font-weight: 500;
 }
 
 .video-controls .ctrl-btn:hover {
@@ -742,6 +744,12 @@ body.dark .input-area input { color: #f0f0f0; }
   transform: scale(0.95);
 }
 
+.video-controls .ctrl-btn.active {
+  background: rgba(255, 215, 0, 0.2);
+  border-color: #ffd700;
+  color: #ffd700;
+}
+
 /* ===== منوی صدا ===== */
 #soundPanel {
   display: none;
@@ -751,23 +759,25 @@ body.dark .input-area input { color: #f0f0f0; }
   z-index: 12;
   padding: 10px;
   border-radius: 14px;
-  min-width: 130px;
-  background: rgba(0, 0, 0, 0.7);
+  min-width: 140px;
+  background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 #soundPanel .sound-option {
-  padding: 6px 10px;
+  padding: 8px 12px;
   border-radius: 8px;
   cursor: pointer;
   font-size: 13px;
   transition: all 0.3s ease;
   text-align: center;
+  color: rgba(255,255,255,0.7);
 }
 
 #soundPanel .sound-option:hover {
   background: rgba(255, 255, 255, 0.1);
+  color: white;
 }
 
 #soundPanel .sound-option.active {
@@ -780,11 +790,70 @@ body.dark .input-area input { color: #f0f0f0; }
   text-align: center;
   margin-top: 6px;
   font-size: 12px;
-  padding: 2px 6px;
+  padding: 4px 8px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.25);
   background: rgba(255, 255, 255, 0.08);
   cursor: pointer;
+  color: rgba(255,255,255,0.5);
+}
+
+#soundPanel .picker-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+}
+
+/* ===== منوی اندازه صفحه ===== */
+#videoSizePanel {
+  display: none;
+  position: absolute;
+  right: 14px;
+  bottom: 60px;
+  z-index: 12;
+  padding: 10px;
+  border-radius: 14px;
+  min-width: 140px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#videoSizePanel .size-option {
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.3s ease;
+  text-align: center;
+  color: rgba(255,255,255,0.7);
+}
+
+#videoSizePanel .size-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+#videoSizePanel .size-option.active {
+  background: rgba(255, 215, 0, 0.2);
+  color: #ffd700;
+}
+
+#videoSizePanel .picker-close {
+  display: block;
+  text-align: center;
+  margin-top: 6px;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  color: rgba(255,255,255,0.5);
+}
+
+#videoSizePanel .picker-close:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
 }
 
 #settings{  
@@ -1156,22 +1225,22 @@ body::before {
     </div>
 
     <!-- منوی اندازه -->
-    <div id="videoSizePanel" class="glass" style="display:none;position:absolute;right:14px;bottom:60px;z-index:12;padding:10px;border-radius:14px;min-width:130px;">
-      <div style="display:flex;flex-direction:column;gap:6px;font-size:14px;">
-        <span style="cursor:pointer" onclick="setVideoSize('contain')">Fit Screen</span>
-        <span style="cursor:pointer" onclick="setVideoSize('cover')">Fill Screen</span>
-        <span style="cursor:pointer" onclick="setVideoSize('100')">100%</span>
-        <span style="cursor:pointer" onclick="setVideoSize('stretch')">Stretch</span>
+    <div id="videoSizePanel" class="glass">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <span class="size-option" data-size="contain" onclick="setVideoSize('contain')">مناسب صفحه</span>
+        <span class="size-option" data-size="cover" onclick="setVideoSize('cover')">پر کردن صفحه</span>
+        <span class="size-option" data-size="100" onclick="setVideoSize('100')">۱۰۰٪</span>
+        <span class="size-option" data-size="stretch" onclick="setVideoSize('stretch')">کشیده</span>
         <span class="picker-close" onclick="closeSizePanel()">✕</span>
       </div>
     </div>
 
     <!-- ✅ منوی صدا -->
     <div id="soundPanel" class="glass">
-      <div style="display:flex;flex-direction:column;gap:6px;font-size:14px;">
-        <span class="sound-option" data-sound="off" onclick="setSound('off')">🔇 خاموش</span>
-        <span class="sound-option" data-sound="cinema" onclick="setSound('cinema')">🎬 سالن سینما</span>
-        <span class="sound-option" data-sound="hall" onclick="setSound('hall')">🏛️ سالن بزرگ</span>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <span class="sound-option" data-sound="off" onclick="setSound('off')">خاموش</span>
+        <span class="sound-option" data-sound="cinema" onclick="setSound('cinema')">سالن سینما</span>
+        <span class="sound-option" data-sound="hall" onclick="setSound('hall')">سالن بزرگ</span>
         <span class="picker-close" onclick="closeSoundPanel()">✕</span>
       </div>
     </div>
@@ -1343,26 +1412,30 @@ let currentSource = null;
 let currentGain = null;
 let isSoundEnabled = false;
 let currentSoundMode = 'off';
+let isSoundInitialized = false;
 
-// لینک فایل‌های IR
 const IR_FILES = {
   cinema: 'https://raw.githubusercontent.com/persiancom/Cinema_Online/main/Block%20Inside.wav',
   hall: 'https://raw.githubusercontent.com/persiancom/Cinema_Online/main/Bottle%20Hall.wav'
 };
 
-// بارگذاری فایل IR
 async function loadIRFile(url) {
-  const response = await fetch(url);
-  const arrayBuffer = await response.arrayBuffer();
-  return arrayBuffer;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Network response was not ok');
+    const arrayBuffer = await response.arrayBuffer();
+    return arrayBuffer;
+  } catch (error) {
+    console.error('Error loading IR file:', error);
+    throw error;
+  }
 }
 
-// تنظیم افکت صدا
 async function setSound(mode) {
   const video = document.getElementById('video');
   if (!video) return;
   
-  // اگر حالت خاموش است یا همان حالت قبلی
+  // اگر حالت خاموش است
   if (mode === 'off') {
     if (audioCtx) {
       try {
@@ -1372,16 +1445,18 @@ async function setSound(mode) {
     }
     currentSoundMode = 'off';
     isSoundEnabled = false;
+    currentSource = null;
+    currentGain = null;
     updateSoundUI('off');
     return;
   }
   
+  // اگر حالت فعلی با حالت جدید یکی است
+  if (currentSoundMode === mode && isSoundEnabled) {
+    return;
+  }
+  
   try {
-    // اگر حالت قبلی با حالت جدید یکی است، کاری نکن
-    if (currentSoundMode === mode && isSoundEnabled) {
-      return;
-    }
-    
     // ایجاد AudioContext
     if (!audioCtx) {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1392,6 +1467,7 @@ async function setSound(mode) {
       try {
         currentSource.disconnect();
       } catch(e) {}
+      currentSource = null;
     }
     
     // ایجاد منبع صدا از ویدیو
@@ -1408,7 +1484,7 @@ async function setSound(mode) {
     
     // ایجاد Gain برای کنترل حجم
     const gainNode = audioCtx.createGain();
-    gainNode.gain.value = 0.4; // شدت افکت
+    gainNode.gain.value = 0.5;
     currentGain = gainNode;
     
     // اتصال: source → convolver → gain → destination
@@ -1424,35 +1500,30 @@ async function setSound(mode) {
     
   } catch(error) {
     console.error('❌ خطا در فعال‌سازی افکت صدا:', error);
-    // در صورت خطا، به حالت عادی برگرد
     setSound('off');
   }
 }
 
-// به‌روزرسانی UI منوی صدا
 function updateSoundUI(mode) {
   document.querySelectorAll('.sound-option').forEach(el => {
     el.classList.toggle('active', el.dataset.sound === mode);
   });
   
-  // به‌روزرسانی دکمه اصلی
   const soundBtn = document.getElementById('soundBtn');
   if (mode === 'off') {
     soundBtn.textContent = '🔊';
-  } else if (mode === 'cinema') {
-    soundBtn.textContent = '🎬';
-  } else if (mode === 'hall') {
-    soundBtn.textContent = '🏛️';
+    soundBtn.classList.remove('active');
+  } else {
+    soundBtn.textContent = '🔊';
+    soundBtn.classList.add('active');
   }
 }
 
-// باز و بسته کردن منوی صدا
 function toggleSoundPanel() {
   const panel = document.getElementById('soundPanel');
   if (!panel) return;
   
   const isOpen = panel.style.display === 'block';
-  // بستن منوهای دیگر
   closeSizePanel();
   closeVideoPanel();
   
@@ -1463,7 +1534,6 @@ function closeSoundPanel() {
   document.getElementById('soundPanel').style.display = 'none';
 }
 
-// دکمه صدا
 document.addEventListener('DOMContentLoaded', function() {
   const soundBtn = document.getElementById('soundBtn');
   if (soundBtn) {
@@ -1474,19 +1544,12 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// بستن منو با کلیک بیرون
 document.addEventListener('click', function() {
   closeSoundPanel();
 });
 
-// جلوگیری از بسته شدن منو با کلیک داخل آن
 document.getElementById('soundPanel')?.addEventListener('click', function(e) {
   e.stopPropagation();
-});
-
-// قطع صدا هنگام قطع فیلم
-document.getElementById('video')?.addEventListener('ended', function() {
-  // فقط قطع نمی‌کنیم، اجازه می‌دهیم کاربر دوباره تنظیم کند
 });
 
 /*****************************/
@@ -1532,10 +1595,16 @@ if(__sizeBtn){
 function setVideoSize(mode){
   var v=document.getElementById("video");
   if(!v)return;
-  if(mode==="contain"){v.style.objectFit="contain";}
-  else if(mode==="cover"){v.style.objectFit="cover";}
+  
+  document.querySelectorAll('.size-option').forEach(el => {
+    el.classList.toggle('active', el.dataset.size === mode);
+  });
+  
+  if(mode==="contain"){v.style.objectFit="contain";v.style.width="100%";v.style.height="100%";}
+  else if(mode==="cover"){v.style.objectFit="cover";v.style.width="100%";v.style.height="100%";}
   else if(mode==="100"){v.style.objectFit="contain";v.style.width="100%";v.style.height="100%";}
-  else if(mode==="stretch"){v.style.objectFit="fill";}
+  else if(mode==="stretch"){v.style.objectFit="fill";v.style.width="100%";v.style.height="100%";}
+  
   closeSizePanel();
 }
 
