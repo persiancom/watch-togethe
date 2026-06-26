@@ -1052,7 +1052,7 @@ body::before {
   <div class="header-right">  
     <span id="onlineWrapper" style="display:flex;align-items:center;gap:6px;">  
       <span id="onlineDot"></span>  
-      <span id="online">Online: 1</span>  
+      <span id="online">Online: 0</span>  
     </span>  
     <button onclick="toggleSettings()">⚙️</button>  
   </div>  
@@ -1073,7 +1073,6 @@ body::before {
   
   <hr>  
   
-  <!-- ✅ دکمه نمایش پینگ در تنظیمات -->
   <button onclick="togglePing()" id="pingToggleBtn">📶 نمایش پینگ: <span id="pingStatus">خاموش</span></button>
 
   <hr>  
@@ -1223,6 +1222,12 @@ function checkLogin(){
     document.getElementById("login").style.display = "none";
     document.getElementById("welcomeName").innerText = user;
     document.getElementById("welcomeOverlay").style.display = "flex";
+    
+    // ✅ بعد از لاگین، کاربر رو به آنلاین اضافه کن
+    var con = db.ref("online/" + myId);
+    con.set({user: username, ts: Date.now()});
+    con.onDisconnect().remove();
+    
   } else {
     errorEl.style.display = "block";
     if(!userExists){
@@ -1275,7 +1280,6 @@ function toggleDark(){document.body.classList.toggle("dark")}
 /*****************************/
 function togglePing(){
   showPing = !showPing;
-  // به‌روزرسانی دکمه‌ها
   var statusText = showPing ? "روشن" : "خاموش";
   document.getElementById("pingStatus").innerText = statusText;
   document.getElementById("pingStatusHeader").innerText = statusText;
@@ -1283,11 +1287,20 @@ function togglePing(){
   var btn = document.getElementById("pingToggleHeader");
   if(showPing){
     btn.classList.add("active");
+    // اولین به‌روزرسانی پینگ
+    setTimeout(() => {
+      updateMyPing();
+      updateUserPings();
+    }, 300);
   } else {
     btn.classList.remove("active");
+    // مخفی کردن پینگ‌ها
+    document.querySelectorAll('.ping-badge').forEach(el => {
+      el.textContent = '--';
+      el.className = 'ping-badge';
+    });
   }
   
-  // ذخیره در localStorage
   try{localStorage.setItem("showPing", showPing);}catch(e){}
 }
 
@@ -1317,7 +1330,7 @@ function measurePing(){
       resolve(ping);
     })
     .catch(() => {
-      resolve(null); // خطا در اتصال
+      resolve(null);
     });
   });
 }
@@ -1348,7 +1361,7 @@ async function updateUserPings(){
   }
 }
 
-// پینگ خودمان (برای نمایش در هدر)
+// پینگ خودمان
 async function updateMyPing(){
   if(!showPing) return;
   const ping = await measurePing();
@@ -1540,17 +1553,19 @@ db.ref("video/state").on("value",snap=>{
 });  
 /* ===== END SYNC ===== */  
 
-/* 🟢 PROFESSIONAL ONLINE SYSTEM */
+// ✅ ارتباط آنلاین
 var connectedRef = db.ref(".info/connected");
 connectedRef.on("value", function(snap) {
   if (snap.val() === true) {
-    var con = db.ref("online/" + myId);
-    con.set({user: username, ts: Date.now()});
-    con.onDisconnect().remove();
+    if(username){
+      var con = db.ref("online/" + myId);
+      con.set({user: username, ts: Date.now()});
+      con.onDisconnect().remove();
+    }
   }
 });
 
-// ✅ نمایش لیست کاربران آنلاین با پینگ
+// ✅ نمایش لیست کاربران آنلاین
 db.ref("online").on("value", snap => {
   var count = 0;
   var usersHtml = '<span style="opacity:0.5;font-size:10px;">📡 آنلاین‌ها:</span>';
@@ -1566,7 +1581,7 @@ db.ref("online").on("value", snap => {
       usersHtml += `<span class="online-user" data-user-id="${userId}">
         <span class="dot"></span>
         ${userName}${isMe ? ' (شما)' : ''}
-        <span class="ping-badge">--</span>
+        <span class="ping-badge">${showPing ? '--' : '--'}</span>
       </span>`;
     }
   });
@@ -1574,7 +1589,7 @@ db.ref("online").on("value", snap => {
   document.getElementById("onlineUsers").innerHTML = usersHtml;
   document.getElementById("online").innerText = "Online: " + count;
   
-  // اگر پینگ فعال باشد، بلافاصله به‌روزرسانی کن
+  // اگر پینگ فعال باشد، به‌روزرسانی کن
   if(showPing){
     setTimeout(() => {
       updateMyPing();
@@ -1582,6 +1597,13 @@ db.ref("online").on("value", snap => {
     }, 500);
   }
 });
+
+// اگر کاربر لاگین کرده بود ولی بعد از رفرش آنلاین نشده بود
+if(username){
+  var con = db.ref("online/" + myId);
+  con.set({user: username, ts: Date.now()});
+  con.onDisconnect().remove();
+}
 
 /*****************************/
 /* ✅ REPLY PREVIEW SYSTEM ✅ */
