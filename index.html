@@ -750,59 +750,6 @@ body.dark .input-area input { color: #f0f0f0; }
   color: #ffd700;
 }
 
-/* ===== منوی صدا ===== */
-#soundPanel {
-  display: none;
-  position: absolute;
-  right: 14px;
-  bottom: 60px;
-  z-index: 12;
-  padding: 10px;
-  border-radius: 14px;
-  min-width: 140px;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-#soundPanel .sound-option {
-  padding: 8px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.3s ease;
-  text-align: center;
-  color: rgba(255,255,255,0.7);
-}
-
-#soundPanel .sound-option:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-}
-
-#soundPanel .sound-option.active {
-  background: rgba(255, 215, 0, 0.2);
-  color: #ffd700;
-}
-
-#soundPanel .picker-close {
-  display: block;
-  text-align: center;
-  margin-top: 6px;
-  font-size: 12px;
-  padding: 4px 8px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.08);
-  cursor: pointer;
-  color: rgba(255,255,255,0.5);
-}
-
-#soundPanel .picker-close:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
-}
-
 /* ===== منوی اندازه صفحه ===== */
 #videoSizePanel {
   display: none;
@@ -1221,7 +1168,6 @@ body::before {
     <div class="video-controls">
       <span id="videoReactBtn" class="ctrl-btn" onclick="toggleVideoPanel()">😊</span>
       <span id="videoSizeBtn" class="ctrl-btn" onclick="toggleSizePanel()">📺</span>
-      <span id="soundBtn" class="ctrl-btn" onclick="toggleSoundPanel()">🔊</span>
     </div>
 
     <!-- منوی اندازه -->
@@ -1232,16 +1178,6 @@ body::before {
         <span class="size-option" data-size="100" onclick="setVideoSize('100')">۱۰۰٪</span>
         <span class="size-option" data-size="stretch" onclick="setVideoSize('stretch')">کشیده</span>
         <span class="picker-close" onclick="closeSizePanel()">✕</span>
-      </div>
-    </div>
-
-    <!-- ✅ منوی صدا -->
-    <div id="soundPanel" class="glass">
-      <div style="display:flex;flex-direction:column;gap:4px;">
-        <span class="sound-option" data-sound="off" onclick="setSound('off')">خاموش</span>
-        <span class="sound-option" data-sound="cinema" onclick="setSound('cinema')">سالن سینما</span>
-        <span class="sound-option" data-sound="hall" onclick="setSound('hall')">سالن بزرگ</span>
-        <span class="picker-close" onclick="closeSoundPanel()">✕</span>
       </div>
     </div>
 
@@ -1405,183 +1341,12 @@ function toggleSettings(){settings.classList.toggle("open")}
 function toggleDark(){document.body.classList.toggle("dark")}  
 
 /*****************************/
-/* 🎬 SOUND EFFECT SYSTEM - ARTIFICIAL REVERB */
-/*****************************/
-let audioCtx = null;
-let currentSource = null;
-let currentConvolver = null;
-let isSoundActive = false;
-let currentSoundMode = 'off';
-
-// ساخت Reverb مصنوعی
-function createArtificialReverb(audioCtx, duration = 1.2, decay = 0.5) {
-  const sampleRate = audioCtx.sampleRate;
-  const length = sampleRate * duration;
-  const impulse = audioCtx.createBuffer(2, length, sampleRate);
-  
-  for (let channel = 0; channel < 2; channel++) {
-    const data = impulse.getChannelData(channel);
-    for (let i = 0; i < length; i++) {
-      const envelope = Math.exp(-i / (length * decay));
-      data[i] = (Math.random() * 2 - 1) * envelope;
-    }
-  }
-  
-  return impulse;
-}
-
-// تنظیم افکت صدا
-async function setSound(mode) {
-  const video = document.getElementById('video');
-  if (!video) {
-    console.error('Video element not found');
-    return;
-  }
-  
-  // اگر حالت خاموش است
-  if (mode === 'off') {
-    if (currentSource) {
-      try { currentSource.disconnect(); } catch(e) {}
-      currentSource = null;
-    }
-    if (currentConvolver) {
-      try { currentConvolver.disconnect(); } catch(e) {}
-      currentConvolver = null;
-    }
-    if (audioCtx && audioCtx.state !== 'closed') {
-      try { await audioCtx.close(); } catch(e) {}
-      audioCtx = null;
-    }
-    isSoundActive = false;
-    currentSoundMode = 'off';
-    updateSoundUI('off');
-    console.log('🔇 Sound off');
-    return;
-  }
-  
-  // اگر حالت فعلی با حالت جدید یکی است
-  if (currentSoundMode === mode && isSoundActive) {
-    return;
-  }
-  
-  try {
-    // ایجاد AudioContext
-    if (!audioCtx || audioCtx.state === 'closed') {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    
-    if (audioCtx.state === 'suspended') {
-      await audioCtx.resume();
-    }
-    
-    // قطع اتصال قبلی
-    if (currentSource) {
-      try { currentSource.disconnect(); } catch(e) {}
-      currentSource = null;
-    }
-    if (currentConvolver) {
-      try { currentConvolver.disconnect(); } catch(e) {}
-      currentConvolver = null;
-    }
-    
-    // ایجاد منبع صدا از ویدیو
-    const source = audioCtx.createMediaElementSource(video);
-    currentSource = source;
-    
-    // ایجاد Convolver با Reverb مصنوعی
-    const convolver = audioCtx.createConvolver();
-    currentConvolver = convolver;
-    
-    // تنظیمات Reverb بر اساس حالت
-    let duration = 1.2;
-    let decay = 0.5;
-    if (mode === 'cinema') {
-      duration = 1.5;
-      decay = 0.4;
-    } else if (mode === 'hall') {
-      duration = 2.0;
-      decay = 0.3;
-    }
-    
-    const impulseBuffer = createArtificialReverb(audioCtx, duration, decay);
-    convolver.buffer = impulseBuffer;
-    
-    // اتصال: source → convolver → destination
-    source.connect(convolver);
-    convolver.connect(audioCtx.destination);
-    
-    isSoundActive = true;
-    currentSoundMode = mode;
-    updateSoundUI(mode);
-    
-    console.log('✅ Artificial Reverb activated:', mode);
-    
-  } catch(error) {
-    console.error('❌ Error activating sound:', error);
-    await setSound('off');
-  }
-}
-
-// به‌روزرسانی UI
-function updateSoundUI(mode) {
-  document.querySelectorAll('.sound-option').forEach(el => {
-    el.classList.toggle('active', el.dataset.sound === mode);
-  });
-  
-  const soundBtn = document.getElementById('soundBtn');
-  if (soundBtn) {
-    if (mode === 'off') {
-      soundBtn.textContent = '🔊';
-      soundBtn.classList.remove('active');
-    } else {
-      soundBtn.textContent = '🔊';
-      soundBtn.classList.add('active');
-    }
-  }
-}
-
-// توابع منوی صدا
-function toggleSoundPanel() {
-  const panel = document.getElementById('soundPanel');
-  if (!panel) return;
-  
-  const isOpen = panel.style.display === 'block';
-  closeSizePanel();
-  closeVideoPanel();
-  
-  panel.style.display = isOpen ? 'none' : 'block';
-}
-
-function closeSoundPanel() {
-  const panel = document.getElementById('soundPanel');
-  if (panel) panel.style.display = 'none';
-}
-
-// بستن منو با کلیک بیرون
-document.addEventListener('click', function(e) {
-  const soundBtn = document.getElementById('soundBtn');
-  const panel = document.getElementById('soundPanel');
-  if (panel && soundBtn) {
-    if (!soundBtn.contains(e.target) && !panel.contains(e.target)) {
-      closeSoundPanel();
-    }
-  }
-});
-
-if (soundPanel) {
-  soundPanel.addEventListener('click', function(e) {
-    e.stopPropagation();
-  });
-}
-
-/*****************************/
 /* 🎉 VIDEO REACTION PANEL ✅ */
 /*****************************/
 var __videoPanel=document.getElementById("videoReactPanel");
 
 function toggleVideoPanel() {
   closeSizePanel();
-  closeSoundPanel();
   if (!__videoPanel) return;
   __videoPanel.style.display = (__videoPanel.style.display === "none" || !__videoPanel.style.display) ? "block" : "none";
 }
@@ -1597,7 +1362,6 @@ var __sizePanel = document.getElementById("videoSizePanel");
 
 function toggleSizePanel() {
   closeVideoPanel();
-  closeSoundPanel();
   if (!__sizePanel) return;
   __sizePanel.style.display = (__sizePanel.style.display === "none" || !__sizePanel.style.display) ? "block" : "none";
 }
@@ -1640,8 +1404,8 @@ document.addEventListener('click', function(e) {
   }
 });
 
-if (sizePanel) {
-  sizePanel.addEventListener('click', function(e) {
+if (__sizePanel) {
+  __sizePanel.addEventListener('click', function(e) {
     e.stopPropagation();
   });
 }
