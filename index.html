@@ -1612,7 +1612,7 @@ function closeAllPickers(){
 document.addEventListener("click",()=>{closeAllPickers();});  
 
 /*****************************/
-/* ✅ SEND - فقط ریپلای اصلاح شده */
+/* ✅ SEND - اصلاح شده برای ریپلای */
 /*****************************/
 function send(){  
   if(!msg.value || !username) return;  
@@ -1626,12 +1626,14 @@ function send(){
     return;  
   }  
 
-  // فقط اینجا اصلاح شده - ریپلای با متن کامل ذخیره میشه
+  // فقط متن ریپلای رو ذخیره کن (همون پیامی که روش کلیک شده)
+  var replyText = replyTo || null;
+
   db.ref("chat").push({  
     text:msg.value,  
     user:username,  
     time:Date.now(),  
-    reply:replyTo,  
+    reply:replyText,  
     seen:false,  
     edited:false,  
     reactions:{}  
@@ -1702,14 +1704,18 @@ db.ref("chat").on("child_added",snap=>{
   var meta=document.createElement("div");  
   meta.className="meta";  
 
-  var reactBtn=document.createElement("span");  
-  reactBtn.className="react-btn";  
-  reactBtn.innerText="😊";  
-  reactBtn.onclick=function(ev){  
-    ev.stopPropagation();  
-    closeAllPickers();  
-    showReactions(key,div);  
-  };  
+  // ری اکشن فقط برای پیام دیگران (نه پیام خودم)
+  if(d.user !== username){  
+    var reactBtn=document.createElement("span");  
+    reactBtn.className="react-btn";  
+    reactBtn.innerText="😊";  
+    reactBtn.onclick=function(ev){  
+      ev.stopPropagation();  
+      closeAllPickers();  
+      showReactions(key,div);  
+    };  
+    meta.appendChild(reactBtn);  
+  }
 
   if(d.user===username){  
     var editBtn=document.createElement("span");  
@@ -1739,7 +1745,6 @@ db.ref("chat").on("child_added",snap=>{
   +(d.edited?" <span style='opacity:.75'>(edited)</span>":"")  
   +(d.user===username?" <span id='s"+key+"'>✔</span>":"");  
 
-  meta.appendChild(reactBtn);  
   div.appendChild(meta);  
 
   var react=document.createElement("div");  
@@ -1831,26 +1836,32 @@ db.ref("chat").on("child_changed",snap=>{
         meta.appendChild(editBtn);  
         meta.appendChild(delBtn);
 
-        var reactBtn=document.createElement("span");  
-        reactBtn.className="react-btn";  
-        reactBtn.innerText="😊";  
-        reactBtn.onclick=function(ev){  
-          ev.stopPropagation();  
-          closeAllPickers();  
-          showReactions(snap.key,m);  
-        };  
-        meta.appendChild(reactBtn);  
+        // ری اکشن فقط برای پیام دیگران
+        if(d.user !== username){
+          var reactBtn=document.createElement("span");  
+          reactBtn.className="react-btn";  
+          reactBtn.innerText="😊";  
+          reactBtn.onclick=function(ev){  
+            ev.stopPropagation();  
+            closeAllPickers();  
+            showReactions(snap.key,m);  
+          };  
+          meta.appendChild(reactBtn);
+        }
       }else{  
         meta.innerHTML=timeStr+editedStr;  
-        var reactBtn=document.createElement("span");  
-        reactBtn.className="react-btn";  
-        reactBtn.innerText="😊";  
-        reactBtn.onclick=function(ev){  
-          ev.stopPropagation();  
-          closeAllPickers();  
-          showReactions(snap.key,m);  
-        };  
-        meta.appendChild(reactBtn);  
+        // ری اکشن فقط برای پیام دیگران
+        if(d.user !== username){
+          var reactBtn=document.createElement("span");  
+          reactBtn.className="react-btn";  
+          reactBtn.innerText="😊";  
+          reactBtn.onclick=function(ev){  
+            ev.stopPropagation();  
+            closeAllPickers();  
+            showReactions(snap.key,m);  
+          };  
+          meta.appendChild(reactBtn);
+        }
       }  
     }  
   }  
