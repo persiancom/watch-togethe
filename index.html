@@ -5,8 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Cinema Online</title>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<!-- Firebase SDK v9+ (Modular) -->
+<script type="importmap">
+{
+  "imports": {
+    "firebase": "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js",
+    "firebase/database": "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"
+  }
+}
+</script>
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -1142,150 +1149,222 @@ style="display:none;position:absolute;right:60px;bottom:60px;z-index:12;padding:
     </div>  
   </div>  
 </div>
-<script>  
-</script>
 
-<script>  
-// ===================== FIREBASE CONFIGURATION =====================
-var firebaseConfig = {
-    apiKey: "AIzaSyARAsQaZhfHHPFVBOpKmPx7u90VRrJoUuM",
-    authDomain: "hobby-land-b0e00.firebaseapp.com",
-    databaseURL: "https://hobby-land-b0e00-default-rtdb.firebaseio.com",
-    projectId: "hobby-land-b0e00",
-    storageBucket: "hobby-land-b0e00.firebasestorage.app",
-    messagingSenderId: "1001642178322",
-    appId: "1:1001642178322:web:a2ca537d1520b9b43d65cb"
+<!-- ============================================================ -->
+<!-- ✅  تمام کدهای JavaScript با Firebase v9+ بازنویسی شده        -->
+<!-- ============================================================ -->
+<script type="module">
+// --------------------------------------------------------------
+// 1. Import Firebase SDK (modular v9+)
+// --------------------------------------------------------------
+import { initializeApp } from "firebase/app";
+import { 
+  getDatabase, 
+  ref, 
+  set, 
+  update, 
+  push, 
+  remove, 
+  onValue, 
+  onChildAdded, 
+  onChildChanged, 
+  onChildRemoved,
+  onDisconnect,
+  serverTimestamp,
+  query,
+  limitToLast,
+  orderByChild,
+  equalTo,
+  get
+} from "firebase/database";
+
+// --------------------------------------------------------------
+// 2. Firebase Config
+// --------------------------------------------------------------
+const firebaseConfig = {
+  apiKey: "AIzaSyARAsQaZhfHHPFVBOpKmPx7u90VRrJoUuM",
+  authDomain: "hobby-land-b0e00.firebaseapp.com",
+  databaseURL: "https://hobby-land-b0e00-default-rtdb.firebaseio.com",
+  projectId: "hobby-land-b0e00",
+  storageBucket: "hobby-land-b0e00.firebasestorage.app",
+  messagingSenderId: "1001642178322",
+  appId: "1:1001642178322:web:a2ca537d1520b9b43d65cb"
 };
-// ======================================================================
 
-firebase.initializeApp(firebaseConfig);  
-var db=firebase.database();  
+// --------------------------------------------------------------
+// 3. Initialize Firebase
+// --------------------------------------------------------------
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-var username="";
-var myId=Math.random().toString(36).substr(2,9);  
-var replyTo=null;  
-var editKey=null;  
+console.log("✅ Firebase initialized successfully!");
+
+// --------------------------------------------------------------
+// 4. Test connection
+// --------------------------------------------------------------
+const connectedRef = ref(db, ".info/connected");
+onValue(connectedRef, (snap) => {
+  if (snap.val() === true) {
+    console.log("✅ Connected to Firebase Realtime Database!");
+  } else {
+    console.log("❌ Disconnected from Firebase.");
+  }
+});
+
+// --------------------------------------------------------------
+// 5. Expose functions to global scope for inline onclick
+// --------------------------------------------------------------
+window.db = db;
+window.ref = ref;
+window.set = set;
+window.update = update;
+window.push = push;
+window.remove = remove;
+window.onValue = onValue;
+window.onChildAdded = onChildAdded;
+window.onChildChanged = onChildChanged;
+window.onChildRemoved = onChildRemoved;
+window.onDisconnect = onDisconnect;
+window.serverTimestamp = serverTimestamp;
+window.query = query;
+window.limitToLast = limitToLast;
+window.orderByChild = orderByChild;
+window.equalTo = equalTo;
+window.get = get;
+
+console.log("✅ Firebase functions exposed to window");
+
+// --------------------------------------------------------------
+// 6. Global variables (now accessible everywhere)
+// --------------------------------------------------------------
+window.username = "";
+window.myId = Math.random().toString(36).substr(2, 9);
+window.replyTo = null;
+window.editKey = null;
+window.showPing = true;
 
 // ✅ کاربران مجاز
 const validUsers = {
   "الهه": "CTF_11",
   "حمیدرضا": "CTF_22"
 };
+window.validUsers = validUsers;
 
-// ✅ وضعیت نمایش پینگ - همیشه روشن
-var showPing = true;
-
-/*****************************/
-/* ✅ LOGIN SYSTEM با دیباگ  */
-/*****************************/
-function checkLogin(){
-  var user = document.getElementById("loginUser").value.trim();
-  var pass = document.getElementById("loginPass").value.trim();
-  var errorEl = document.getElementById("loginError");
-  var debugEl = document.getElementById("loginDebug");
+// --------------------------------------------------------------
+// 7. LOGIN SYSTEM
+// --------------------------------------------------------------
+window.checkLogin = function() {
+  const user = document.getElementById("loginUser").value.trim();
+  const pass = document.getElementById("loginPass").value.trim();
+  const errorEl = document.getElementById("loginError");
+  const debugEl = document.getElementById("loginDebug");
   
   debugEl.style.display = "block";
   debugEl.innerHTML = "🔍 ورودی: نام کاربری = '" + user + "' | رمز = '" + pass + "'";
   debugEl.style.color = "#ffd700";
   
-  var userExists = validUsers[user];
-  var passCorrect = userExists && userExists === pass;
+  const userExists = validUsers[user];
+  const passCorrect = userExists && userExists === pass;
   
-  if(userExists && passCorrect){
-    username = user;
+  if (userExists && passCorrect) {
+    window.username = user;
     errorEl.style.display = "none";
     document.getElementById("login").style.display = "none";
     document.getElementById("welcomeName").innerText = user;
     document.getElementById("welcomeOverlay").style.display = "flex";
     
-    // ✅ بعد از لاگین، کاربر رو به آنلاین اضافه کن
-    var con = db.ref("online/" + myId);
-    con.set({user: username, ts: Date.now()});
-    con.onDisconnect().remove();
+    // ثبت آنلاین
+    const conRef = ref(db, "online/" + window.myId);
+    set(conRef, { user: user, ts: Date.now() });
+    onDisconnect(conRef).remove();
     
   } else {
     errorEl.style.display = "block";
-    if(!userExists){
+    if (!userExists) {
       debugEl.innerHTML += " ❌ کاربر پیدا نشد";
-    } else if(!passCorrect){
+    } else if (!passCorrect) {
       debugEl.innerHTML += " ❌ رمز اشتباه است";
     }
     debugEl.style.color = "#ff6666";
   }
-}
+};
 
-function closeWelcome(){
+window.closeWelcome = function() {
   document.getElementById("welcomeOverlay").style.display = "none";
-}
+};
 
 document.addEventListener("keydown", function(e) {
-  if(e.key === "Enter" && document.getElementById("login").style.display !== "none") {
-    checkLogin();
+  if (e.key === "Enter" && document.getElementById("login").style.display !== "none") {
+    window.checkLogin();
   }
 });
 
-/*****************************/
-/* 🎨 THEME SYSTEM           */
-/*****************************/
-function applyTheme(t){
-  document.body.classList.remove("theme1","theme2","theme3","theme4");
+// --------------------------------------------------------------
+// 8. THEME SYSTEM
+// --------------------------------------------------------------
+function applyTheme(t) {
+  document.body.classList.remove("theme1", "theme2", "theme3", "theme4");
   document.body.classList.add(t);
 }
-function setTheme(t){
+window.applyTheme = applyTheme;
+
+window.setTheme = function(t) {
   applyTheme(t);
-  try{localStorage.setItem("wt_theme",t);}catch(e){}
-  db.ref("ui/theme").set(t);
-}
-(function(){
-  var t=null;
-  try{t=localStorage.getItem("wt_theme");}catch(e){}
-  if(t) applyTheme(t); else applyTheme("theme1");
+  try { localStorage.setItem("wt_theme", t); } catch(e) {}
+  const themeRef = ref(db, "ui/theme");
+  set(themeRef, t);
+};
+
+// Load saved theme
+(function() {
+  let t = null;
+  try { t = localStorage.getItem("wt_theme"); } catch(e) {}
+  if (t) applyTheme(t); else applyTheme("theme1");
 })();
 
-db.ref("ui/theme").on("value",snap=>{
-  var t=snap.val();
-  if(t) applyTheme(t);
+const themeRef = ref(db, "ui/theme");
+onValue(themeRef, (snap) => {
+  const t = snap.val();
+  if (t) applyTheme(t);
 });
 
-function toggleSettings(){settings.classList.toggle("open")}  
-function toggleDark(){document.body.classList.toggle("dark")}  
+window.toggleSettings = function() {
+  document.getElementById("settings").classList.toggle("open");
+};
 
-/*****************************/
-/* 📶 PING SYSTEM - همیشه روشن */
-/*****************************/
+window.toggleDark = function() {
+  document.body.classList.toggle("dark");
+};
 
-// محاسبه پینگ واقعی
-function measurePing(){
-  return new Promise((resolve) => {
+// --------------------------------------------------------------
+// 9. PING SYSTEM
+// --------------------------------------------------------------
+async function measurePing() {
+  try {
     const start = performance.now();
-    fetch('https://www.google.com/favicon.ico', { 
+    await fetch('https://www.google.com/favicon.ico', { 
       mode: 'no-cors',
       cache: 'no-store'
-    })
-    .then(() => {
-      const ping = Math.round(performance.now() - start);
-      resolve(ping);
-    })
-    .catch(() => {
-      resolve(null);
     });
-  });
+    return Math.round(performance.now() - start);
+  } catch(e) {
+    return null;
+  }
 }
 
-// به‌روزرسانی پینگ کاربران
-async function updateUserPings(){
+async function updateUserPings() {
   const users = document.querySelectorAll('.online-user');
-  for(const el of users){
+  for (const el of users) {
     const userId = el.dataset.userId;
-    if(userId && userId !== myId){
+    if (userId && userId !== window.myId) {
       const ping = await measurePing();
       const badge = el.querySelector('.ping-badge');
-      if(badge){
-        if(ping !== null){
+      if (badge) {
+        if (ping !== null) {
           badge.textContent = ping + 'ms';
           badge.className = 'ping-badge';
-          if(ping < 300) badge.classList.add('ping-good');
-          else if(ping < 600) badge.classList.add('ping-medium');
+          if (ping < 300) badge.classList.add('ping-good');
+          else if (ping < 600) badge.classList.add('ping-medium');
           else badge.classList.add('ping-bad');
         } else {
           badge.textContent = '⛔';
@@ -1296,16 +1375,15 @@ async function updateUserPings(){
   }
 }
 
-// پینگ خودمان
-async function updateMyPing(){
+async function updateMyPing() {
   const ping = await measurePing();
-  const myEl = document.querySelector('.online-user[data-user-id="' + myId + '"] .ping-badge');
-  if(myEl){
-    if(ping !== null){
+  const myEl = document.querySelector('.online-user[data-user-id="' + window.myId + '"] .ping-badge');
+  if (myEl) {
+    if (ping !== null) {
       myEl.textContent = ping + 'ms';
       myEl.className = 'ping-badge';
-      if(ping < 300) myEl.classList.add('ping-good');
-      else if(ping < 600) myEl.classList.add('ping-medium');
+      if (ping < 300) myEl.classList.add('ping-good');
+      else if (ping < 600) myEl.classList.add('ping-medium');
       else myEl.classList.add('ping-bad');
     } else {
       myEl.textContent = '⛔';
@@ -1314,201 +1392,208 @@ async function updateMyPing(){
   }
 }
 
-// شروع پینگ周期
 setInterval(() => {
   updateMyPing();
   updateUserPings();
 }, 4000);
 
-/*****************************/
-/* 🎉 VIDEO REACTION PANEL ✅ */
-/*****************************/
-var __videoPanel=document.getElementById("videoReactPanel");
-var __videoBtn=document.getElementById("videoReactBtn");
+// --------------------------------------------------------------
+// 10. VIDEO REACTION PANEL
+// --------------------------------------------------------------
+const videoPanel = document.getElementById("videoReactPanel");
+const videoBtn = document.getElementById("videoReactBtn");
 
-function closeVideoPanel(){
-  if(__videoPanel) __videoPanel.style.display="none";
+window.closeVideoPanel = function() {
+  if (videoPanel) videoPanel.style.display = "none";
+};
+
+if (videoBtn) {
+  videoBtn.addEventListener("click", function(e) {
+    e.stopPropagation();
+    if (!videoPanel) return;
+    videoPanel.style.display = (videoPanel.style.display === "none" || !videoPanel.style.display) ? "block" : "none";
+  });
 }
 
-__videoBtn.addEventListener("click",function(e){
-  e.stopPropagation();
-  if(!__videoPanel) return;
-  __videoPanel.style.display=(__videoPanel.style.display==="none" || !__videoPanel.style.display) ? "block" : "none";
+document.addEventListener("click", function() {
+  window.closeVideoPanel();
 });
 
-document.addEventListener("click",function(){
-  closeVideoPanel();
-});
-
-/*****************************/
-/* 🎉 LIVE EMOTES (overlay + sync) */
-/*****************************/
-function spawnVideoEmote(emoji){
-  var layer=document.getElementById("videoEmoteLayer");
-  if(!layer)return;
-  var el=document.createElement("div");
-  el.className="fly-emo";
-  el.innerText=emoji;
-
-  var top=12 + Math.floor(Math.random()* (layer.clientHeight-60));
-  el.style.left="8px";
-  el.style.top=top+"px";
-
+// --------------------------------------------------------------
+// 11. LIVE EMOTES
+// --------------------------------------------------------------
+function spawnVideoEmote(emoji) {
+  const layer = document.getElementById("videoEmoteLayer");
+  if (!layer) return;
+  const el = document.createElement("div");
+  el.className = "fly-emo";
+  el.innerText = emoji;
+  
+  const top = 12 + Math.floor(Math.random() * (layer.clientHeight - 60));
+  el.style.left = "8px";
+  el.style.top = top + "px";
+  
   layer.appendChild(el);
   void el.offsetWidth;
-  el.style.animationDuration=(1.0 + Math.random()*0.4)+"s";
-
-  setTimeout(()=>{ try{el.remove();}catch(e){} },1500);
+  el.style.animationDuration = (1.0 + Math.random() * 0.4) + "s";
+  
+  setTimeout(() => { try { el.remove(); } catch(e) {} }, 1500);
 }
 
-function sendLiveEmote(emoji){
+window.sendLiveEmote = function(emoji) {
   spawnVideoEmote(emoji);
-  db.ref("video/emotes").push({
-    e:emoji,
-    user:username,
-    ts:Date.now()
+  const emotesRef = ref(db, "video/emotes");
+  push(emotesRef, {
+    e: emoji,
+    user: window.username,
+    ts: Date.now()
   });
-  closeVideoPanel();
-}
+  window.closeVideoPanel();
+};
 
-db.ref("video/emotes").limitToLast(30).on("child_added",snap=>{
-  var d=snap.val();
-  if(!d)return;
-  if(d.user===username) return;
+const emotesRef = ref(db, "video/emotes");
+const emotesQuery = query(emotesRef, limitToLast(30));
+onChildAdded(emotesQuery, (snap) => {
+  const d = snap.val();
+  if (!d) return;
+  if (d.user === window.username) return;
   spawnVideoEmote(d.e);
 });
 
-/*****************************/
-/* 🎬 VIDEO LINK             */
-/*****************************/
-function setVideoLink(){  
-  var link=document.getElementById("videoLinkInput").value;  
-  if(!link)return;  
-  db.ref("video/url").set(link);  
-  videoLinkInput.value="";  
-  toggleSettings();  
-}  
-db.ref("video/url").on("value",snap=>{  
-  if(snap.val())video.src=snap.val();  
-});  
+// --------------------------------------------------------------
+// 12. VIDEO LINK
+// --------------------------------------------------------------
+window.setVideoLink = function() {
+  const link = document.getElementById("videoLinkInput").value;
+  if (!link) return;
+  const videoUrlRef = ref(db, "video/url");
+  set(videoUrlRef, link);
+  document.getElementById("videoLinkInput").value = "";
+  window.toggleSettings();
+};
 
-/*****************************/
-/* 🎭 CURTAIN HELPERS        */
-/*****************************/
-function curtainReset(){  
-  var c=document.getElementById("curtain");  
-  if(!c)return;  
-  c.classList.remove("hide");  
-  c.classList.remove("open");  
-}  
-function curtainOpenAndGo(){  
-  var c=document.getElementById("curtain");  
-  if(!c)return;  
-  c.classList.remove("hide");  
-  c.classList.remove("open");  
-  setTimeout(()=>{ c.classList.add("open"); },60);  
-  setTimeout(()=>{ c.classList.add("hide"); },1750);  
-}  
-</script>
-<script>
-/* ===================== */  
-/* ✅ VIDEO SYNC ADDED ✅ */  
-/* ===================== */  
-var vid=document.getElementById("video");  
-var isSyncing=false;  
-var lastSeekSend=0;
-
-function __setVideoGlow(on){
-  try{
-    var vc=document.querySelector(".video-container");
-    if(!vc) return;
-    vc.classList.toggle("playing", !!on);
-  }catch(e){}
-}
-
-vid.addEventListener("play",()=>{__setVideoGlow(true);});
-vid.addEventListener("pause",()=>{__setVideoGlow(false);});
-vid.addEventListener("ended",()=>{__setVideoGlow(false);});
-
-function pushState(state){  
-  db.ref("video/state").set(state);  
-}  
-
-vid.addEventListener("play",()=>{  
-  curtainOpenAndGo();  
-  if(isSyncing)return;  
-  pushState({action:"play",time:vid.currentTime,rate:vid.playbackRate,ts:Date.now()});  
-});  
-
-vid.addEventListener("pause",()=>{  
-  curtainReset();  
-  if(isSyncing)return;  
-  pushState({action:"pause",time:vid.currentTime,rate:vid.playbackRate,ts:Date.now()});  
-});  
-
-vid.addEventListener("seeked",()=>{  
-  curtainOpenAndGo();  
-  if(isSyncing)return;  
-  var now=Date.now();  
-  if(now-lastSeekSend<250)return;  
-  lastSeekSend=now;  
-  pushState({action:"seek",time:vid.currentTime,rate:vid.playbackRate,ts:now});  
-});  
-
-vid.addEventListener("ratechange",()=>{  
-  if(isSyncing)return;  
-  pushState({action:"rate",time:vid.currentTime,rate:vid.playbackRate,ts:Date.now()});  
-});  
-
-db.ref("video/state").on("value",snap=>{  
-  var s=snap.val();  
-  if(!s)return;  
-  isSyncing=true;  
-
-  if(typeof s.rate==="number" && vid.playbackRate!==s.rate){  
-    vid.playbackRate=s.rate;  
-  }  
-
-  if(typeof s.time==="number" && Math.abs(vid.currentTime-s.time)>0.6){  
-    try{vid.currentTime=s.time;}catch(e){}  
-  }  
-
-  if(s.action==="seek"){ curtainOpenAndGo(); }  
-
-  if(s.action==="play"){  
-    var p=vid.play();  
-    if(p && p.catch)p.catch(()=>{});  
-  }  
-  if(s.action==="pause"){ vid.pause(); }  
-
-  setTimeout(()=>{isSyncing=false;},300);  
-});  
-/* ===== END SYNC ===== */  
-
-// ✅ ارتباط آنلاین
-var connectedRef = db.ref(".info/connected");
-connectedRef.on("value", function(snap) {
-  if (snap.val() === true) {
-    if(username){
-      var con = db.ref("online/" + myId);
-      con.set({user: username, ts: Date.now()});
-      con.onDisconnect().remove();
-    }
+const videoUrlRef = ref(db, "video/url");
+onValue(videoUrlRef, (snap) => {
+  const val = snap.val();
+  if (val) {
+    const video = document.getElementById("video");
+    if (video) video.src = val;
   }
 });
 
-// ✅ نمایش لیست کاربران آنلاین با پینگ
-db.ref("online").on("value", snap => {
-  var count = 0;
-  var usersHtml = '<span style="opacity:0.5;font-size:10px;">📡 آنلاین‌ها:</span>';
+// --------------------------------------------------------------
+// 13. CURTAIN HELPERS
+// --------------------------------------------------------------
+window.curtainReset = function() {
+  const c = document.getElementById("curtain");
+  if (!c) return;
+  c.classList.remove("hide");
+  c.classList.remove("open");
+};
+
+window.curtainOpenAndGo = function() {
+  const c = document.getElementById("curtain");
+  if (!c) return;
+  c.classList.remove("hide");
+  c.classList.remove("open");
+  setTimeout(() => { c.classList.add("open"); }, 60);
+  setTimeout(() => { c.classList.add("hide"); }, 1750);
+};
+
+// --------------------------------------------------------------
+// 14. VIDEO SYNC
+// --------------------------------------------------------------
+const vid = document.getElementById("video");
+let isSyncing = false;
+let lastSeekSend = 0;
+
+function __setVideoGlow(on) {
+  try {
+    const vc = document.querySelector(".video-container");
+    if (!vc) return;
+    vc.classList.toggle("playing", !!on);
+  } catch(e) {}
+}
+
+if (vid) {
+  vid.addEventListener("play", () => { __setVideoGlow(true); });
+  vid.addEventListener("pause", () => { __setVideoGlow(false); });
+  vid.addEventListener("ended", () => { __setVideoGlow(false); });
+}
+
+function pushState(state) {
+  const stateRef = ref(db, "video/state");
+  set(stateRef, state);
+}
+
+if (vid) {
+  vid.addEventListener("play", () => {
+    window.curtainOpenAndGo();
+    if (isSyncing) return;
+    pushState({ action: "play", time: vid.currentTime, rate: vid.playbackRate, ts: Date.now() });
+  });
+
+  vid.addEventListener("pause", () => {
+    window.curtainReset();
+    if (isSyncing) return;
+    pushState({ action: "pause", time: vid.currentTime, rate: vid.playbackRate, ts: Date.now() });
+  });
+
+  vid.addEventListener("seeked", () => {
+    window.curtainOpenAndGo();
+    if (isSyncing) return;
+    const now = Date.now();
+    if (now - lastSeekSend < 250) return;
+    lastSeekSend = now;
+    pushState({ action: "seek", time: vid.currentTime, rate: vid.playbackRate, ts: now });
+  });
+
+  vid.addEventListener("ratechange", () => {
+    if (isSyncing) return;
+    pushState({ action: "rate", time: vid.currentTime, rate: vid.playbackRate, ts: Date.now() });
+  });
+}
+
+const stateRef = ref(db, "video/state");
+onValue(stateRef, (snap) => {
+  const s = snap.val();
+  if (!s || !vid) return;
+  isSyncing = true;
+
+  if (typeof s.rate === "number" && vid.playbackRate !== s.rate) {
+    vid.playbackRate = s.rate;
+  }
+
+  if (typeof s.time === "number" && Math.abs(vid.currentTime - s.time) > 0.6) {
+    try { vid.currentTime = s.time; } catch(e) {}
+  }
+
+  if (s.action === "seek") { window.curtainOpenAndGo(); }
+
+  if (s.action === "play") {
+    const p = vid.play();
+    if (p && p.catch) p.catch(() => {});
+  }
+  if (s.action === "pause") { vid.pause(); }
+
+  setTimeout(() => { isSyncing = false; }, 300);
+});
+
+// --------------------------------------------------------------
+// 15. ONLINE USERS
+// --------------------------------------------------------------
+const onlineRef = ref(db, "online");
+onValue(onlineRef, (snap) => {
+  let count = 0;
+  let usersHtml = '<span style="opacity:0.5;font-size:10px;">📡 آنلاین‌ها:</span>';
   
-  snap.forEach(child => {
-    var data = child.val();
-    if(data && data.user){
+  snap.forEach((child) => {
+    const data = child.val();
+    if (data && data.user) {
       count++;
-      var userId = child.key;
-      var isMe = (userId === myId);
-      var userName = data.user;
+      const userId = child.key;
+      const isMe = (userId === window.myId);
+      const userName = data.user;
       
       usersHtml += `<span class="online-user" data-user-id="${userId}">
         <span class="dot"></span>
@@ -1520,438 +1605,445 @@ db.ref("online").on("value", snap => {
   
   document.getElementById("onlineUsers").innerHTML = usersHtml;
   
-  // به‌روزرسانی پینگ
   setTimeout(() => {
     updateMyPing();
     updateUserPings();
   }, 500);
 });
 
-// اگر کاربر لاگین کرده بود ولی بعد از رفرش آنلاین نشده بود
-if(username){
-  var con = db.ref("online/" + myId);
-  con.set({user: username, ts: Date.now()});
-  con.onDisconnect().remove();
+// If user already logged in
+if (window.username) {
+  const conRef = ref(db, "online/" + window.myId);
+  set(conRef, { user: window.username, ts: Date.now() });
+  onDisconnect(conRef).remove();
 }
 
-/*****************************/
-/* ✅ REPLY PREVIEW SYSTEM ✅ */
-/*****************************/
-function setReply(text){  
-  replyTo=text;  
-  var box=document.getElementById("replyPreview");  
-  var t=document.getElementById("replyPreviewText");  
-  t.innerText=text;  
-  box.style.display="block";  
-  try{msg.focus();}catch(e){}  
-}  
-function cancelReply(){  
-  replyTo=null;  
-  var box=document.getElementById("replyPreview");  
-  box.style.display="none";  
-  document.getElementById("replyPreviewText").innerText="";  
-}  
+// --------------------------------------------------------------
+// 16. REPLY & EDIT SYSTEM
+// --------------------------------------------------------------
+window.setReply = function(text) {
+  window.replyTo = text;
+  const box = document.getElementById("replyPreview");
+  const t = document.getElementById("replyPreviewText");
+  t.innerText = text;
+  box.style.display = "block";
+  try { document.getElementById("msg").focus(); } catch(e) {}
+};
 
-/****************************/
-/* ✅ EDIT MESSAGE SYSTEM ✅ */
-/****************************/
-function setEdit(key,oldText){  
-  editKey=key;  
-  document.getElementById("editPreviewText").innerText=oldText;  
-  document.getElementById("editPreview").style.display="block";  
-  msg.value=oldText;  
-  try{msg.focus();}catch(e){}  
-  cancelReply();  
-}  
-function cancelEdit(){  
-  editKey=null;  
-  document.getElementById("editPreview").style.display="none";  
-  document.getElementById("editPreviewText").innerText="";  
-  msg.value="";  
-}  
+window.cancelReply = function() {
+  window.replyTo = null;
+  document.getElementById("replyPreview").style.display = "none";
+  document.getElementById("replyPreviewText").innerText = "";
+};
 
-/*****************************/
-/* ✅ TYPING INDICATOR ✅     */
-/*****************************/
-function setTyping(isTyping){  
-  db.ref("typing/"+myId).set(isTyping?{user:username,typing:true,ts:Date.now()}:null);  
-}  
-db.ref("typing/"+myId).onDisconnect().remove();  
+window.setEdit = function(key, oldText) {
+  window.editKey = key;
+  document.getElementById("editPreviewText").innerText = oldText;
+  document.getElementById("editPreview").style.display = "block";
+  document.getElementById("msg").value = oldText;
+  try { document.getElementById("msg").focus(); } catch(e) {}
+  window.cancelReply();
+};
 
-var typingTimer=null;  
-msg.addEventListener("input",()=>{  
-  setTyping(true);  
-  if(typingTimer)clearTimeout(typingTimer);  
-  typingTimer=setTimeout(()=>{setTyping(false);},900);  
-});  
-msg.addEventListener("blur",()=>{setTyping(false);});  
+window.cancelEdit = function() {
+  window.editKey = null;
+  document.getElementById("editPreview").style.display = "none";
+  document.getElementById("editPreviewText").innerText = "";
+  document.getElementById("msg").value = "";
+};
 
-db.ref("typing").on("value",snap=>{  
-  var names=[];  
-  snap.forEach(c=>{  
-    if(c.key!==myId && c.val() && c.val().typing){  
-      names.push(c.val().user||"someone");  
-    }  
-  });  
-  var box=document.getElementById("typingIndicator");  
-  if(names.length){  
-    box.style.display="block";  
-    box.innerText=(names.length===1?names[0]:"چند نفر")+" در حال تایپ...";  
-  }else{  
-    box.style.display="none";  
-    box.innerText="";  
-  }  
-});  
-
-/*****************************/
-/* ✅ CLOSE ANY OPEN PICKER ✅ */
-/*****************************/
-function closeAllPickers(){  
-  document.querySelectorAll(".reaction-picker").forEach(p=>p.remove());  
-}  
-document.addEventListener("click",()=>{closeAllPickers();});  
-
-/*****************************/
-/* ✅ SEND (device removed)  */
-/*****************************/
-function send(){  
-  if(!msg.value || !username) return;  
-
-  if(editKey){  
-    db.ref("chat/"+editKey+"/text").set(msg.value);  
-    db.ref("chat/"+editKey+"/edited").set(true);  
-    msg.value="";  
-    cancelEdit();  
-    setTyping(false);  
-    return;  
-  }  
-
-  db.ref("chat").push({  
-    text:msg.value,  
-    user:username,  
-    time:Date.now(),  
-    reply:replyTo,  
-    seen:false,  
-    edited:false,  
-    reactions:{}  
-  });  
-  msg.value="";  
-  cancelReply();  
-  setTyping(false);  
-}  
-
-/********************************************/
-/* ✅ DOUBLE TAP / DOUBLE CLICK TO REPLY ✅ */
-/********************************************/
-var lastTapTimeByKey={};  
-function attachReplyHandlers(div,key,text){  
-  div.addEventListener("dblclick",function(e){  
-    e.stopPropagation();  
-    setReply(text);  
-  });  
-  div.addEventListener("touchend",function(e){  
-    var now=Date.now();  
-    var last=lastTapTimeByKey[key]||0;  
-    lastTapTimeByKey[key]=now;  
-    if(now-last<320){  
-      try{e.preventDefault();}catch(err){}  
-      setReply(text);  
-    }  
-  },{passive:false});  
-}  
-
-/*****************************/
-/* ✅ DELETE SINGLE MESSAGE ✅ */
-/*****************************/
-function deleteMessage(key){
-  db.ref("chat/"+key).remove();
+// --------------------------------------------------------------
+// 17. TYPING INDICATOR
+// --------------------------------------------------------------
+function setTyping(isTyping) {
+  const typingRef = ref(db, "typing/" + window.myId);
+  if (isTyping) {
+    set(typingRef, { user: window.username, typing: true, ts: Date.now() });
+  } else {
+    remove(typingRef);
+  }
 }
 
-/*****************************/
-/* ✅ CHAT RENDER            */
-/*****************************/
-db.ref("chat").on("child_added",snap=>{  
-  var d=snap.val();  
-  var key=snap.key;  
+const msgInput = document.getElementById("msg");
+let typingTimer = null;
 
-  if(d.user!==username){  
-    db.ref("chat/"+key+"/seen").set(true);  
-  }  
+if (msgInput) {
+  msgInput.addEventListener("input", () => {
+    setTyping(true);
+    if (typingTimer) clearTimeout(typingTimer);
+    typingTimer = setTimeout(() => { setTyping(false); }, 900);
+  });
+  msgInput.addEventListener("blur", () => { setTyping(false); });
+}
 
-  var div=document.createElement("div");  
-  div.className="message "+(d.user===username?"me":"other");  
-  div.id="m_"+key;  
+const typingRefAll = ref(db, "typing");
+onValue(typingRefAll, (snap) => {
+  const names = [];
+  snap.forEach((c) => {
+    if (c.key !== window.myId && c.val() && c.val().typing) {
+      names.push(c.val().user || "someone");
+    }
+  });
+  const box = document.getElementById("typingIndicator");
+  if (names.length) {
+    box.style.display = "block";
+    box.innerText = (names.length === 1 ? names[0] : "چند نفر") + " در حال تایپ...";
+  } else {
+    box.style.display = "none";
+    box.innerText = "";
+  }
+});
 
-  var nameDiv=document.createElement("div");
-  nameDiv.className="msg-username";
-  nameDiv.innerText=d.user;
+// --------------------------------------------------------------
+// 18. CLOSE ALL PICKERS
+// --------------------------------------------------------------
+function closeAllPickers() {
+  document.querySelectorAll(".reaction-picker").forEach(p => p.remove());
+}
+document.addEventListener("click", () => { closeAllPickers(); });
+
+// --------------------------------------------------------------
+// 19. SEND MESSAGE
+// --------------------------------------------------------------
+window.send = function() {
+  const msg = document.getElementById("msg");
+  if (!msg.value || !window.username) return;
+
+  if (window.editKey) {
+    const editRef = ref(db, "chat/" + window.editKey + "/text");
+    set(editRef, msg.value);
+    const editFlagRef = ref(db, "chat/" + window.editKey + "/edited");
+    set(editFlagRef, true);
+    msg.value = "";
+    window.cancelEdit();
+    setTyping(false);
+    return;
+  }
+
+  const chatRef = ref(db, "chat");
+  push(chatRef, {
+    text: msg.value,
+    user: window.username,
+    time: Date.now(),
+    reply: window.replyTo,
+    seen: false,
+    edited: false,
+    reactions: {}
+  });
+  msg.value = "";
+  window.cancelReply();
+  setTyping(false);
+};
+
+// --------------------------------------------------------------
+// 20. DOUBLE TAP / DOUBLE CLICK TO REPLY
+// --------------------------------------------------------------
+const lastTapTimeByKey = {};
+
+function attachReplyHandlers(div, key, text) {
+  div.addEventListener("dblclick", function(e) {
+    e.stopPropagation();
+    window.setReply(text);
+  });
+  div.addEventListener("touchend", function(e) {
+    const now = Date.now();
+    const last = lastTapTimeByKey[key] || 0;
+    lastTapTimeByKey[key] = now;
+    if (now - last < 320) {
+      try { e.preventDefault(); } catch(err) {}
+      window.setReply(text);
+    }
+  }, { passive: false });
+}
+
+// --------------------------------------------------------------
+// 21. DELETE MESSAGE
+// --------------------------------------------------------------
+window.deleteMessage = function(key) {
+  if (confirm("پیام حذف بشه؟")) {
+    const msgRef = ref(db, "chat/" + key);
+    remove(msgRef);
+  }
+};
+
+// --------------------------------------------------------------
+// 22. CHAT RENDER
+// --------------------------------------------------------------
+const chatBox = document.getElementById("chat");
+
+const chatRefAll = ref(db, "chat");
+onChildAdded(chatRefAll, (snap) => {
+  const d = snap.val();
+  const key = snap.key;
+
+  if (d.user !== window.username) {
+    const seenRef = ref(db, "chat/" + key + "/seen");
+    set(seenRef, true);
+  }
+
+  const div = document.createElement("div");
+  div.className = "message " + (d.user === window.username ? "me" : "other");
+  div.id = "m_" + key;
+
+  const nameDiv = document.createElement("div");
+  nameDiv.className = "msg-username";
+  nameDiv.innerText = d.user;
   div.appendChild(nameDiv);
 
-  if(d.reply){  
-    var rep=document.createElement("div");  
-    rep.className="reply-box";  
-    rep.innerText=d.reply;  
-    div.appendChild(rep);  
-  }  
+  if (d.reply) {
+    const rep = document.createElement("div");
+    rep.className = "reply-box";
+    rep.innerText = d.reply;
+    div.appendChild(rep);
+  }
 
-  var text=document.createElement("div");  
-  text.innerText=d.text;  
-  div.appendChild(text);  
+  const text = document.createElement("div");
+  text.innerText = d.text;
+  div.appendChild(text);
 
-  var meta=document.createElement("div");  
-  meta.className="meta";  
+  const meta = document.createElement("div");
+  meta.className = "meta";
 
-  var reactBtn=document.createElement("span");  
-  reactBtn.className="react-btn";  
-  reactBtn.innerText="😊";  
-  reactBtn.onclick=function(ev){  
-    ev.stopPropagation();  
-    closeAllPickers();  
-    showReactions(key,div);  
-  };  
+  const reactBtn = document.createElement("span");
+  reactBtn.className = "react-btn";
+  reactBtn.innerText = "😊";
+  reactBtn.onclick = function(ev) {
+    ev.stopPropagation();
+    closeAllPickers();
+    showReactions(key, div);
+  };
 
-  if(d.user===username){  
-    var editBtn=document.createElement("span");  
-    editBtn.className="edit-btn";  
-    editBtn.innerText="✎";  
-    editBtn.onclick=function(ev){  
-      ev.stopPropagation();  
-      closeAllPickers();  
-      setEdit(key,d.text);  
-    };  
-
-    var delBtn=document.createElement("span");
-    delBtn.className="del-btn";
-    delBtn.innerText="🗑";
-    delBtn.onclick=function(ev){
+  if (d.user === window.username) {
+    const editBtn = document.createElement("span");
+    editBtn.className = "edit-btn";
+    editBtn.innerText = "✎";
+    editBtn.onclick = function(ev) {
       ev.stopPropagation();
-      if(confirm("پیام حذف بشه؟")){
-        deleteMessage(key);
-      }
+      closeAllPickers();
+      window.setEdit(key, d.text);
     };
-  }  
 
-  meta.innerHTML=new Date(d.time).toLocaleTimeString().slice(0,5)  
-  +(d.edited?" <span style='opacity:.75'>(edited)</span>":"")  
-  +(d.user===username?" <span id='s"+key+"'>✔</span>":"");  
+    const delBtn = document.createElement("span");
+    delBtn.className = "del-btn";
+    delBtn.innerText = "🗑";
+    delBtn.onclick = function(ev) {
+      ev.stopPropagation();
+      window.deleteMessage(key);
+    };
 
-  if(d.user===username){  
-    meta.appendChild(editBtn);  
+    meta.innerHTML = new Date(d.time).toLocaleTimeString().slice(0, 5) +
+      (d.edited ? " <span style='opacity:.75'>(edited)</span>" : "") +
+      (d.user === window.username ? " <span id='s" + key + "'>✔</span>" : "");
+    
+    meta.appendChild(editBtn);
     meta.appendChild(delBtn);
-  }  
-  meta.appendChild(reactBtn);  
-  div.appendChild(meta);  
+    meta.appendChild(reactBtn);
+    div.appendChild(meta);
+  } else {
+    meta.innerHTML = new Date(d.time).toLocaleTimeString().slice(0, 5) +
+      (d.edited ? " <span style='opacity:.75'>(edited)</span>" : "");
+    meta.appendChild(reactBtn);
+    div.appendChild(meta);
+  }
 
-  var react=document.createElement("div");  
-  react.className="reactions";  
-  div.appendChild(react);  
+  const react = document.createElement("div");
+  react.className = "reactions";
+  div.appendChild(react);
 
-  div.onclick=function(e){ e.stopPropagation(); };  
-  attachReplyHandlers(div,key,d.text);  
+  div.onclick = function(e) { e.stopPropagation(); };
+  attachReplyHandlers(div, key, d.text);
 
-  chat.appendChild(div);  
-  chat.scrollTop=chat.scrollHeight;  
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
 
-  if(d.user===username){  
-    db.ref("chat/"+key+"/seen").on("value",s=>{  
-      var el=document.getElementById("s"+key);
-      if(el) el.innerText=s.val()?"✔✔":"✔";  
-    });  
-  }  
-});  
-
-db.ref("chat").on("child_removed",snap=>{
-  var el=document.getElementById("m_"+snap.key);
-  if(el) el.remove();
+  if (d.user === window.username) {
+    const seenRef = ref(db, "chat/" + key + "/seen");
+    onValue(seenRef, (s) => {
+      const el = document.getElementById("s" + key);
+      if (el) el.innerText = s.val() ? "✔✔" : "✔";
+    });
+  }
 });
 
-/*****************************/
-/* ✅ REACTIONS PICKER       */
-/*****************************/
-function showReactions(key,div){  
-  if(div.querySelector(".reaction-picker"))return;  
-  var picker=document.createElement("div");  
-  picker.className="reaction-picker";  
-
-  var close=document.createElement("span");  
-  close.className="picker-close";  
-  close.innerText="✕";  
-  close.onclick=function(ev){  
-    ev.stopPropagation();  
-    picker.remove();  
-  };  
-  picker.appendChild(close);  
-
-  ["😍","😎","🤣","🩷","👌","😭","😡","🔥","😜"].forEach(e=>{  
-    var span=document.createElement("span");  
-    span.innerText=e;  
-    span.onclick=function(ev){  
-      ev.stopPropagation();  
-      db.ref("chat/"+key+"/reactions/"+myId).set(e);  
-      picker.remove();  
-    };  
-    picker.appendChild(span);  
-  });  
-  div.appendChild(picker);  
-}  
-
-db.ref("chat").on("child_changed",snap=>{  
-  var d=snap.val();  
-  var m=document.getElementById("m_"+snap.key);  
-  if(m){  
-    var mainText=m.querySelector("div:nth-child(2)");  
-    if(mainText) mainText.innerText=d.text;  
-
-    var meta=m.querySelector(".meta");  
-    if(meta){  
-      var timeStr=new Date(d.time).toLocaleTimeString().slice(0,5);  
-      var editedStr=d.edited?" <span style='opacity:.75'>(edited)</span>":"";  
-      if(d.user===username){  
-        meta.innerHTML=timeStr+editedStr+" <span id='s"+snap.key+"'>"+(d.seen?"✔✔":"✔")+"</span>";  
-
-        var editBtn=document.createElement("span");  
-        editBtn.className="edit-btn";  
-        editBtn.innerText="✎";  
-        editBtn.onclick=function(ev){  
-          ev.stopPropagation();  
-          closeAllPickers();  
-          setEdit(snap.key,d.text);  
-        };  
-
-        var delBtn=document.createElement("span");
-        delBtn.className="del-btn";
-        delBtn.innerText="🗑";
-        delBtn.onclick=function(ev){
-          ev.stopPropagation();
-          if(confirm("پیام حذف بشه؟")){
-            deleteMessage(snap.key);
-          }
-        };
-
-        meta.appendChild(editBtn);  
-        meta.appendChild(delBtn);
-
-        var reactBtn=document.createElement("span");  
-        reactBtn.className="react-btn";  
-        reactBtn.innerText="😊";  
-        reactBtn.onclick=function(ev){  
-          ev.stopPropagation();  
-          closeAllPickers();  
-          showReactions(snap.key,m);  
-        };  
-        meta.appendChild(reactBtn);  
-      }else{  
-        meta.innerHTML=timeStr+editedStr;  
-        var reactBtn=document.createElement("span");  
-        reactBtn.className="react-btn";  
-        reactBtn.innerText="😊";  
-        reactBtn.onclick=function(ev){  
-          ev.stopPropagation();  
-          closeAllPickers();  
-          showReactions(snap.key,m);  
-        };  
-        meta.appendChild(reactBtn);  
-      }  
-    }  
-  }  
-
-  var react=document.querySelector("#m_"+snap.key+" .reactions");  
-  if(react){  
-    react.innerHTML="";  
-    if(d.reactions){  
-      Object.values(d.reactions).forEach(e=>{  
-        react.innerHTML+=e+" ";  
-      });  
-    }  
-  }  
-});  
-
-/*****************************/
-/* ✅ CLEAR CHAT (SYNC) ✅    */
-/*****************************/
-function clearChat(){  
-  db.ref("chat").remove();  
-  chat.innerHTML="";  
-  cancelReply();  
-  cancelEdit();  
-}  
-
-</script>  
-
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const typingEl = document.getElementById("typingIndicator");
-    if (typingEl) typingEl.style.display = "none";
+onChildRemoved(chatRefAll, (snap) => {
+  const el = document.getElementById("m_" + snap.key);
+  if (el) el.remove();
 });
-</script>
 
+// --------------------------------------------------------------
+// 23. REACTIONS PICKER
+// --------------------------------------------------------------
+function showReactions(key, div) {
+  if (div.querySelector(".reaction-picker")) return;
+  const picker = document.createElement("div");
+  picker.className = "reaction-picker";
 
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const video = document.querySelector("video");
-    const videoWrapper = document.querySelector(".video-wrapper");
+  const close = document.createElement("span");
+  close.className = "picker-close";
+  close.innerText = "✕";
+  close.onclick = function(ev) {
+    ev.stopPropagation();
+    picker.remove();
+  };
+  picker.appendChild(close);
 
-    if (videoWrapper) {
-        videoWrapper.style.minHeight = "88vh";
+  ["😍", "😎", "🤣", "🩷", "👌", "😭", "😡", "🔥", "😜"].forEach(e => {
+    const span = document.createElement("span");
+    span.innerText = e;
+    span.onclick = function(ev) {
+      ev.stopPropagation();
+      const reactRef = ref(db, "chat/" + key + "/reactions/" + window.myId);
+      set(reactRef, e);
+      picker.remove();
+    };
+    picker.appendChild(span);
+  });
+  div.appendChild(picker);
+}
+
+onChildChanged(chatRefAll, (snap) => {
+  const d = snap.val();
+  const m = document.getElementById("m_" + snap.key);
+  if (!m) return;
+
+  const mainText = m.querySelector("div:nth-child(2)");
+  if (mainText) mainText.innerText = d.text;
+
+  const meta = m.querySelector(".meta");
+  if (meta) {
+    const timeStr = new Date(d.time).toLocaleTimeString().slice(0, 5);
+    const editedStr = d.edited ? " <span style='opacity:.75'>(edited)</span>" : "";
+    
+    if (d.user === window.username) {
+      meta.innerHTML = timeStr + editedStr + " <span id='s" + snap.key + "'>" + (d.seen ? "✔✔" : "✔") + "</span>";
+      
+      const editBtn = document.createElement("span");
+      editBtn.className = "edit-btn";
+      editBtn.innerText = "✎";
+      editBtn.onclick = function(ev) {
+        ev.stopPropagation();
+        closeAllPickers();
+        window.setEdit(snap.key, d.text);
+      };
+
+      const delBtn = document.createElement("span");
+      delBtn.className = "del-btn";
+      delBtn.innerText = "🗑";
+      delBtn.onclick = function(ev) {
+        ev.stopPropagation();
+        window.deleteMessage(snap.key);
+      };
+
+      const reactBtn = document.createElement("span");
+      reactBtn.className = "react-btn";
+      reactBtn.innerText = "😊";
+      reactBtn.onclick = function(ev) {
+        ev.stopPropagation();
+        closeAllPickers();
+        showReactions(snap.key, m);
+      };
+
+      meta.appendChild(editBtn);
+      meta.appendChild(delBtn);
+      meta.appendChild(reactBtn);
+    } else {
+      meta.innerHTML = timeStr + editedStr;
+      const reactBtn = document.createElement("span");
+      reactBtn.className = "react-btn";
+      reactBtn.innerText = "😊";
+      reactBtn.onclick = function(ev) {
+        ev.stopPropagation();
+        closeAllPickers();
+        showReactions(snap.key, m);
+      };
+      meta.appendChild(reactBtn);
     }
+  }
 
-    if (video) {
-        video.addEventListener("play", () => {
-            video.style.marginTop = "25px";
-            video.style.transition = "all 0.4s ease";
-        });
-
-        video.addEventListener("pause", () => {
-            video.style.marginTop = "0px";
-        });
+  const react = m.querySelector(".reactions");
+  if (react) {
+    react.innerHTML = "";
+    if (d.reactions) {
+      Object.values(d.reactions).forEach(e => {
+        react.innerHTML += e + " ";
+      });
     }
+  }
 });
-</script>
 
-<script>
-/* ===== VIDEO SIZE CONTROL ===== */
-var __sizeBtn = document.getElementById("videoSizeBtn");
-var __sizePanel = document.getElementById("videoSizePanel");
+// --------------------------------------------------------------
+// 24. CLEAR CHAT
+// --------------------------------------------------------------
+window.clearChat = function() {
+  const chatRefAll = ref(db, "chat");
+  remove(chatRefAll);
+  document.getElementById("chat").innerHTML = "";
+  window.cancelReply();
+  window.cancelEdit();
+};
 
-function closeSizePanel(){
-  if(__sizePanel) __sizePanel.style.display="none";
+// --------------------------------------------------------------
+// 25. VIDEO SIZE CONTROL
+// --------------------------------------------------------------
+const sizeBtn = document.getElementById("videoSizeBtn");
+const sizePanel = document.getElementById("videoSizePanel");
+
+window.closeSizePanel = function() {
+  if (sizePanel) sizePanel.style.display = "none";
+};
+
+if (sizeBtn) {
+  sizeBtn.addEventListener("click", function(e) {
+    e.stopPropagation();
+    sizePanel.style.display = (sizePanel.style.display === "none" || !sizePanel.style.display) ? "block" : "none";
+  });
 }
 
-if(__sizeBtn){
-__sizeBtn.addEventListener("click",function(e){
-e.stopPropagation();
-__sizePanel.style.display =
-(__sizePanel.style.display==="none" || !__sizePanel.style.display)
-? "block" : "none";
+window.setVideoSize = function(mode) {
+  const v = document.getElementById("video");
+  if (!v) return;
+
+  if (mode === "contain") {
+    v.style.objectFit = "contain";
+  } else if (mode === "cover") {
+    v.style.objectFit = "cover";
+  } else if (mode === "100") {
+    v.style.objectFit = "contain";
+    v.style.width = "100%";
+    v.style.height = "100%";
+  } else if (mode === "stretch") {
+    v.style.objectFit = "fill";
+  }
+
+  window.closeSizePanel();
+};
+
+document.addEventListener("click", function() {
+  window.closeSizePanel();
 });
-}
 
-function setVideoSize(mode){
-var v=document.getElementById("video");
-if(!v)return;
-
-if(mode==="contain"){
-v.style.objectFit="contain";
-}
-else if(mode==="cover"){
-v.style.objectFit="cover";
-}
-else if(mode==="100"){
-v.style.objectFit="contain";
-v.style.width="100%";
-v.style.height="100%";
-}
-else if(mode==="stretch"){
-v.style.objectFit="fill";
-}
-
-closeSizePanel();
-}
-
-document.addEventListener("click",function(){
-closeSizePanel();
+// --------------------------------------------------------------
+// 26. DOMContentLoaded - final init
+// --------------------------------------------------------------
+document.addEventListener("DOMContentLoaded", function() {
+  const typingEl = document.getElementById("typingIndicator");
+  if (typingEl) typingEl.style.display = "none";
+  
+  const video = document.querySelector("video");
+  if (video) {
+    video.addEventListener("play", () => {
+      video.style.marginTop = "25px";
+      video.style.transition = "all 0.4s ease";
+    });
+    video.addEventListener("pause", () => {
+      video.style.marginTop = "0px";
+    });
+  }
+  
+  console.log("✅ Cinema Online fully loaded!");
 });
+
+console.log("✅ All Firebase functions and event listeners registered!");
 </script>
 </body>  
 </html>
